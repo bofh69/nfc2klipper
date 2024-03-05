@@ -45,6 +45,18 @@ parser.add_argument(
 def set_spool_and_filament(url: str, spool: int, filament: int):
     """Calls moonraker with the current spool & filament"""
 
+    if "old_spool" not in set_spool_and_filament.__dict__:
+        set_spool_and_filament.old_spool = None
+        set_spool_and_filament.old_filament = None
+
+    if (
+        set_spool_and_filament.old_spool == spool
+        and set_spool_and_filament.old_filament == filament
+    ):
+        return
+
+    print(f"Sending spool #{spool}, filament #{filament} to klipper")
+
     commands = {
         "commands": [
             f"SET_ACTIVE_SPOOL ID={spool}",
@@ -52,11 +64,22 @@ def set_spool_and_filament(url: str, spool: int, filament: int):
         ]
     }
 
-    response = requests.post(
-        url + "/api/printer/command", timeout=10, json=commands
-    )
-    if response.status_code != 200:
-        raise ValueError(f"Request to moonraker failed: {response}")
+    # In case the post fails, we might not know if the server has received
+    # it or not, so set them to None:
+    set_spool_and_filament.old_spool = None
+    set_spool_and_filament.old_filament = None
+
+    try:
+        response = requests.post(
+            url + "/api/printer/command", timeout=10, json=commands
+        )
+        if response.status_code != 200:
+            raise ValueError(f"Request to moonraker failed: {response}")
+    except Exception as ex:
+        print(ex)
+
+    set_spool_and_filament.old_spool = spool
+    set_spool_and_filament.old_filament = filament
 
 
 def get_data_from_ndef_records(records):
