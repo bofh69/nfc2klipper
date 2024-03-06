@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2024 Sebastian Andersson <sebastian@bittr.nu>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 # nfc2klipper
 
 Set loaded spool &amp; filament in klipper from NFC tags.

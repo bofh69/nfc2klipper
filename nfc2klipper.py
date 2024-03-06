@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# SPDX-FileCopyrightText: 2024 Sebastian Andersson <sebastian@bittr.nu>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Program to set current filament & spool in klipper."""
 
 import argparse

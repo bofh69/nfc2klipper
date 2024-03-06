@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# SPDX-FileCopyrightText: 2024 Sebastian Andersson <sebastian@bittr.nu>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """ A program to write NFC tags from Spoolman's data """
 
 import argparse
