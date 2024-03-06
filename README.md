@@ -35,43 +35,7 @@ Klipper should have two gcode macros:
 * SET_ACTIVE_SPOOL ID=n
 
 
-I use this configuration:
-```ini
-[gcode_macro SET_ACTIVE_SPOOL]
-gcode:
-  {% if params.ID %}
-    {% set id = params.ID|int %}
-    {action_call_remote_method(
-       "spoolman_set_active_spool",
-       spool_id=id
-    )}
-  {% else %}
-    {action_respond_info("Parameter 'ID' is required")}
-  {% endif %}
-
-[gcode_macro SET_ACTIVE_FILAMENT]
-variable_active_filament: 0
-gcode:
-  {% if params.ID %}
-    {% set id = params.ID|int %}
-    SET_GCODE_VARIABLE MACRO=SET_ACTIVE_FILAMENT VARIABLE=active_filament VALUE={id}
-  {% else %}
-    {action_respond_info("Parameter 'ID' is required")}
-  {% endif %}
-
-[gcode_macro ASSERT_ACTIVE_FILAMENT]
-gcode:
-  {% if params.ID %}
-    {% set id = params.ID|int %}
-    {% current_id = printer["gcode_macro set_active_filament"].active_filament %}
-    {% if id != current_id %}
-      {# TODO: Change to PAUSE & M117 message #}
-      {action_raise_error("Wrong filament is loaded, should be " + id)}
-    {% endif %}
-  {% else %}
-    {action_respond_info("Parameter 'ID' is required")}
-  {% endif %}
-```
+See [klipper-spoolman.cfg] for klipper config for them.
 
 ## Preparing tags
 
