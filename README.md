@@ -85,7 +85,7 @@ The numbers are the id numbers that will be sent to the macros in
 klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
 
 
-I've written to my tags with an Android phone and NXP's TagWriter.
-
-write.tags.py is supposed to use Spoolman's database to write
-the right values to the tags, but it is not working yet.
+This can be written via NXP's TagWriter on a phone, or better yet,
+use the `write_tags.py` program. The later fetches Spoolman's filaments,
+shows a simple GUI, press return on the chosen spool and it will be
+written to the tag.
