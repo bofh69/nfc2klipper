@@ -78,7 +78,7 @@ def set_spool_and_filament(url: str, spool: int, filament: int):
         )
         if response.status_code != 200:
             raise ValueError(f"Request to moonraker failed: {response}")
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=W0718
         print(ex)
 
     set_spool_and_filament.old_spool = spool
