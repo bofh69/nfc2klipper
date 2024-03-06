@@ -2,8 +2,6 @@
 
 Set loaded spool &amp; filament in klipper from NFC tags.
 
-WARNING: This is Work In Progress and not yet tested
-
 
 ## Preparing an NFC reader
 
@@ -80,4 +78,5 @@ klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
 
 I've written to my tags with an Android phone and NXP's TagWriter.
 
-TODO: Write it with the NFC interface. A TUI selecting the spool to write?
+write.tags.py is supposed to use Spoolman's database to write
+the right values to the tags, but it is not working yet.
