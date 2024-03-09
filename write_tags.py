@@ -32,7 +32,7 @@ parser.add_argument(
     "-d",
     "--nfc-device",
     metavar="device",
-    default="ttyS0",
+    default="ttyAMA0",
     help="Which NFC reader to use, see "
     + "https://nfcpy.readthedocs.io/en/latest/topics/get-started.html#open-a-local-device"
     + " for format",
