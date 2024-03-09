@@ -5,6 +5,6 @@ Source: https://github.com/bofh69/nfc2klipper
 
 # Sample paragraph, commented out:
 #
-Files: .github/* requirements.txt .gitignore
+Files: .github/* requirements.txt .gitignore nfc2klipper.service
 Copyright: $YEAR $NAME <$CONTACT>
 License: CC0-1.0

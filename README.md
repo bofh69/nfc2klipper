@@ -96,3 +96,17 @@ This can be written via NXP's TagWriter on a phone, or better yet,
 use the `write_tags.py` program. The later fetches Spoolman's filaments,
 shows a simple text interface where the spool can be chosen, and when
 pressing return, writes to the tag.
+
+## Run automaticly with systemd
+
+Copy nfc2klippper.service to `/etc/systemd/system`, then run:
+
+```sh
+sudo systemctl start nfc2klipper
+sudo systemctl enable nfc2klipper
+```
+
+To see its status, run:
+```sh
+sudo systemctl status nfc2klipper
+```
