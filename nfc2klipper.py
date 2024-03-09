@@ -56,6 +56,7 @@ def set_spool_and_filament(url: str, spool: int, filament: int):
         set_spool_and_filament.old_spool == spool
         and set_spool_and_filament.old_filament == filament
     ):
+        print("Read same spool & filament")
         return
 
     print(f"Sending spool #{spool}, filament #{filament} to klipper")
