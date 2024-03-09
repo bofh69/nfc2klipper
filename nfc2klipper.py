@@ -56,10 +56,10 @@ def set_spool_and_filament(url: str, spool: int, filament: int):
         set_spool_and_filament.old_spool == spool
         and set_spool_and_filament.old_filament == filament
     ):
-        print("Read same spool & filament")
+        print("Read same spool & filament", flush=True)
         return
 
-    print(f"Sending spool #{spool}, filament #{filament} to klipper")
+    print(f"Sending spool #{spool}, filament #{filament} to klipper", flush=True)
 
     commands = {
         "commands": [
@@ -125,7 +125,7 @@ def get_data_from_ndef_records(records):
                     if line[0] == FILAMENT:
                         filament = line[1]
         else:
-            print(f"Read other record: {record}")
+            print(f"Read other record: {record}", flush=True)
 
     return spool, filament
 
@@ -134,14 +134,14 @@ def on_nfc_connect(tag):
     """Handles a read tag"""
 
     if tag.ndef is None:
-        print("The tag doesn't have NDEF records")
+        print("The tag doesn't have NDEF records", flush=True)
         return True
 
     spool, filament = get_data_from_ndef_records(tag.ndef.records)
 
     if not args.clear:
         if not (spool and filament):
-            print("Did not find spool and filament records in tag")
+            print("Did not find spool and filament records in tag", flush=True)
     if args.clear or (spool and filament):
         if not spool:
             spool = 0
