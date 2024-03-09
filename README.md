@@ -21,11 +21,38 @@ program is running.
 
 
 Many pages suggest connecting its VCC pin to 5V on the RPi. Don't!
-It can run from 3.3V and then it won't risk destroying the RPi's GPIO pins.
+It can run from 3.3V and then it won't risk slowly destroying the RPi's
+GPIO pins.
 
 
 See [here](https://learn.adafruit.com/adafruit-nfc-rfid-on-raspberry-pi/pi-serial-port)
-for how to configure a raspberry pi for it.
+for how to configure a raspberry pi for it (but change VCC pin...).
+
+
+### PN532 bug in the nfcpy module
+
+When using running it with the raspberry pi's mini-uart (ttyS0 as device), it works fine.
+When using the other UART (ttyAMA0), I can only run the programs once.
+I have to power cycle the PN532 to get them to run again. Just rebooting
+the pi doesn't help.
+
+This seems to be due to a bug in nfcpy (version 1.0.4),
+see (https://github.com/nfcpy/nfcpy/issues/186).
+
+A workaround that works for me is to change
+`venv/lib/python3.7/site-packages/nfc/clf/pn532.py`
+around line 390, from:
+
+```python
+        change_baudrate = True  # try higher speeds
+```
+
+to:
+
+```python
+        change_baudrate = False  # try higher speeds
+```
+
 
 
 ## Preparing klipper
@@ -67,5 +94,5 @@ klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
 
 This can be written via NXP's TagWriter on a phone, or better yet,
 use the `write_tags.py` program. The later fetches Spoolman's filaments,
-shows a simple text interface where the spool can be chosen, then press
-return to write to the tag.
+shows a simple text interface where the spool can be chosen, and when
+pressing return, writes to the tag.
