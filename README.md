@@ -34,7 +34,7 @@ There is a model for attaching it to the printer
 
 ### PN532 bug in the nfcpy module
 
-When using running it with the raspberry pi's mini-uart (ttyS0 as device), it works fine.
+When running it on a raspberry pi's mini-uart (ttyS0 as device), it works fine.
 When using the other UART (ttyAMA0), I can only run the programs once.
 I have to power cycle the PN532 to get them to run again. Just rebooting
 the pi doesn't help.
@@ -99,6 +99,9 @@ This can be written via NXP's TagWriter on a phone, or better yet,
 use the `write_tags.py` program. The later fetches Spoolman's filaments,
 shows a simple text interface where the spool can be chosen, and when
 pressing return, writes to the tag.
+
+Use the `write_tag` script to stop the nfc2klipper service before and
+start it again after.
 
 ## Run automaticly with systemd
 
