@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# SPDX-FileCopyrightText: 2024 Sebastian Andersson <sebastian@bittr.nu>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 systemctl stop nfc2klipper.service 
 ./venv/bin/python3 ./write_tags.py || true
 systemctl start nfc2klipper.service 
