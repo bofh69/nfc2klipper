@@ -1,9 +1,27 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # SPDX-FileCopyrightText: 2024 Sebastian Andersson <sebastian@bittr.nu>
 #
 # SPDX-License-Identifier: CC0-1.0
 
+if [[ ${BASH_SOURCE[0]} = */* ]]; then
+  cd -- "${BASH_SOURCE%/*}/" || exit
+fi
+
+if [ ! -d venv ]; then
+  echo "Creating python virtual environment"
+  virtualenv -p python3 venv || rm -r venv
+  echo "Installing python requirements"
+  venv/bin/pip3 install -r requirements.txt || exit
+fi
+
+restart_service() {
+  trap SIGINT
+  systemctl start nfc2klipper.service 
+  exit
+}
+
 systemctl stop nfc2klipper.service 
-./venv/bin/python3 ./write_tags.py || true
-systemctl start nfc2klipper.service 
+trap "restart_service" INT
+venv/bin/python3 ./write_tags.py || true
+restart_service
