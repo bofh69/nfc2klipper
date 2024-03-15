@@ -15,8 +15,6 @@ import npyscreen
 import requests
 
 
-# TODO: Documentation
-
 SPOOL = "SPOOL"
 FILAMENT = "FILAMENT"
 NDEF_TEXT_TYPE = "urn:nfc:wkt:T"
@@ -94,12 +92,22 @@ class PostSelectForm(npyscreen.FormBaseNew):
 class TagWritingApp(npyscreen.NPSAppManaged):
     """The npyscreen's main class for the application"""
 
+    def __init__(self):
+        super().__init__()
+        self.status = ""
+
     def on_nfc_connect(self, tag, spool: int, filament: int) -> bool:
         """Write given spool/filament ids to the tag"""
-        if tag.ndef:
-            tag.ndef.records = [
-                ndef.TextRecord(f"SPOOL:{spool}\nFILAMENT:{filament}\n")
-            ]
+        try:
+            if tag.ndef and tag.ndef.is_writeable:
+                tag.ndef.records = [
+                    ndef.TextRecord(f"SPOOL:{spool}\nFILAMENT:{filament}\n")
+                ]
+            else:
+                self.status = "Tag is write protected"
+        except Exception as ex:  # pylint: disable=W0718
+            print(ex)
+            self.status = "Got error while writing"
         return False
 
     def write_tag(self, record):
@@ -112,6 +120,8 @@ class TagWritingApp(npyscreen.NPSAppManaged):
         spool = record["id"]
         filament = record["filament"]["id"]
 
+        self.status = "Written"
+
         clf = nfc.ContactlessFrontend(args.nfc_device)
         clf.connect(
             rdwr={
@@ -121,7 +131,7 @@ class TagWritingApp(npyscreen.NPSAppManaged):
             }
         )
         clf.close()
-        npyscreen.notify("Written", title="Writing to tag")
+        npyscreen.notify(self.status, title="Writing to tag")
         time.sleep(1)
 
     def onStart(self):
