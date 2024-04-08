@@ -12,6 +12,13 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 Set loaded spool &amp; filament in klipper from NFC/RFID tags.
 
+## Prepare for running nfc2klipper
+
+In the cloned repository's dir run:
+```sh
+virtualenv venv
+venv/bin/pip3 install -r requirements.txt
+```
 
 ## Preparing an NFC reader
 
