@@ -102,13 +102,16 @@ The numbers are the id numbers that will be sent to the macros in
 klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
 
 
-This can be written via NXP's TagWriter on a phone, or better yet,
-use the `write_tags.py` program. The later fetches Spoolman's filaments,
-shows a simple text interface where the spool can be chosen, and when
-pressing return, writes to the tag.
+One way to do this is to use the Android app [Spoolman Companion](https://github.com/V-aruu/SpoolCompanion).
 
-Use the `write_tag` script to stop the nfc2klipper service before and
-start it again after.
+
+One can also use the `write_tags.py` program included here.
+It fetches Spoolman's filaments, shows a simple text interface where
+the spool can be chosen, and when pressing return, writes to the tag.
+
+Use the `write_tag` script to stop the nfc2klipper service, run the write_tags.py program and
+then start the service again after.
+
 
 ## Run automaticly with systemd
 
