@@ -44,6 +44,8 @@ parser.add_argument(
     help="URL for the moonraker installation",
 )
 
+args = parser.parse_args()
+
 
 def set_spool_and_filament(url: str, spool: int, filament: int):
     """Calls moonraker with the current spool & filament"""
@@ -154,8 +156,6 @@ def on_nfc_connect(tag):
 
 
 if __name__ == "__main__":
-    args = parser.parse_args()
-
     # Open NFC reader. Will throw an exception if it fails.
     clf = nfc.ContactlessFrontend(args.nfc_device)
 

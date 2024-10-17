@@ -35,6 +35,8 @@ GPIO pins.
 See [here](https://learn.adafruit.com/adafruit-nfc-rfid-on-raspberry-pi/pi-serial-port)
 for how to configure a raspberry pi for it (but change VCC pin...).
 
+Run `sudo rpi-update` to avoid problems with older firmware on the pi.
+
 There is a model for attaching it to the printer
 [here](https://www.printables.com/model/798929-elechouse-pn532-v3-nfc-holder-for-voron-for-spoolm).
 
