@@ -89,7 +89,7 @@ For every filament, add a custom start gcode that calls:
 
 where `<id>` is its filament id in Spoolman.
 
-This can be done automatically by using [sm2ss](https://github.com/bofh69/sm2ss).
+This can be done automatically by using [spoolman2slicer](https://github.com/bofh69/spoolman2slicer).
 
 
 ## Preparing tags
