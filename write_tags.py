@@ -113,9 +113,7 @@ class TagWritingApp(npyscreen.NPSAppManaged):
     def write_tag(self, record):
         """Write the choosen records's data to the tag"""
 
-        npyscreen.notify(
-            "Writing " + record_to_text(record), title="Writing to tag"
-        )
+        npyscreen.notify("Writing " + record_to_text(record), title="Writing to tag")
 
         spool = record["id"]
         filament = record["filament"]["id"]
@@ -124,11 +122,7 @@ class TagWritingApp(npyscreen.NPSAppManaged):
 
         clf = nfc.ContactlessFrontend(args.nfc_device)
         clf.connect(
-            rdwr={
-                "on-connect": lambda tag: self.on_nfc_connect(
-                    tag, spool, filament
-                )
-            }
+            rdwr={"on-connect": lambda tag: self.on_nfc_connect(tag, spool, filament)}
         )
         clf.close()
         npyscreen.notify(self.status, title="Writing to tag")

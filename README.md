@@ -20,6 +20,8 @@ virtualenv venv
 venv/bin/pip3 install -r requirements.txt
 ```
 
+Update the config in `nfc2klipper-config.json5`.
+
 ## Preparing an NFC reader
 
 I use a PN532 based reader (Elechouse PN532 NFC RFID Module V3, if you
@@ -103,16 +105,35 @@ FILAMENT:2
 The numbers are the id numbers that will be sent to the macros in
 klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
 
+### Write tags with the **extperimental** web server
 
-One way to do this is to use the Android app [Spoolman Companion](https://github.com/V-aruu/SpoolCompanion).
+It is possible to enable an **experimental** web server in `nfc2klipper.py`.
+It will then serve a web page for writing to the tags.
+The default address will be `http://mainsailos.local:5001/`,
+where `mainsailos.local` should be replaced with the computer's name (or IP address).
+
+The program uses a development web server with **no security** at all so it
+shouldn't be run if the computer is running on an untrusted network.
+
+The program has a configuration file (nfc2klipper-config.json5) for
+enabling the web server, setting the port number, addresses to moonraker
+and mainsail, the webserver's address and NFC device to use.
 
 
-One can also use the `write_tags.py` program included here.
-It fetches Spoolman's filaments, shows a simple text interface where
-the spool can be chosen, and when pressing return, writes to the tag.
+### Write with an app
 
-Use the `write_tag` script to stop the nfc2klipper service, run the write_tags.py program and
-then start the service again after.
+There is an Android app, [Spoolman Companion](https://github.com/V-aruu/SpoolCompanion), for writing
+to the tags.
+
+### Write with console application
+
+The `write_tags.py` program fetches Spoolman's spools, shows a simple
+text interface where the spool can be chosen, and when pressing return,
+writes to the tag.
+
+Use the `write_tag` script to stop the nfc2klipper service, run the
+`write_tags.py` program and then start the service again after.
+
 
 
 ## Run automaticly with systemd
