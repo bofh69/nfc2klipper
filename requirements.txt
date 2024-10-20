@@ -1,3 +1,5 @@
+flask==3.0.3
+json5==0.9.25
 nfcpy==1.0.4
-requests==2.31.0
 npyscreen==4.10.5
+requests==2.31.0

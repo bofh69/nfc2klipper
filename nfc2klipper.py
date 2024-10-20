@@ -3,51 +3,36 @@
 # SPDX-FileCopyrightText: 2024 Sebastian Andersson <sebastian@bittr.nu>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Program to set current filament & spool in klipper."""
+"""Program to set current filament & spool in klipper, and write to tags. """
 
-import argparse
+import threading
+import os
 
-import nfc
-import requests
+from flask import Flask, render_template
+import json5
+
+from lib.moonraker_web_client import MoonrakerWebClient
+from lib.nfc_handler import NfcHandler
+from lib.spoolman_client import SpoolmanClient
 
 SPOOL = "SPOOL"
 FILAMENT = "FILAMENT"
 NDEF_TEXT_TYPE = "urn:nfc:wkt:T"
 
-parser = argparse.ArgumentParser()
-# description="Fetches filaments from Spoolman and creates SuperSlicer filament configs.",
+script_dir = os.path.dirname(__file__)
+cfg_filename = os.path.join(script_dir, "nfc2klipper-config.json5")
+with open(cfg_filename, "r", encoding="utf-8") as fp:
+    args = json5.load(fp)
 
-parser.add_argument("--version", action="version", version="%(prog)s 0.0.1")
-
-parser.add_argument(
-    "-c",
-    "--clear",
-    action="store_true",
-    help="Clears the spool & filamnet when no tag is present",
-)
-
-parser.add_argument(
-    "-d",
-    "--nfc-device",
-    metavar="device",
-    default="ttyAMA0",
-    help="Which NFC reader to use, see "
-    + "https://nfcpy.readthedocs.io/en/latest/topics/get-started.html#open-a-local-device"
-    + " for format",
-)
-
-parser.add_argument(
-    "-u",
-    "--url",
-    metavar="URL",
-    default="http://mainsailos.local",
-    help="URL for the moonraker installation",
-)
-
-args = parser.parse_args()
+spoolman = SpoolmanClient(args["spoolman-url"])
+moonraker = MoonrakerWebClient(args["moonraker-url"])
+nfc_handler = NfcHandler(args["nfc-device"])
 
 
-def set_spool_and_filament(url: str, spool: int, filament: int):
+app = Flask(__name__)
+
+
+def set_spool_and_filament(spool: int, filament: int):
     """Calls moonraker with the current spool & filament"""
 
     if "old_spool" not in set_spool_and_filament.__dict__:
@@ -63,108 +48,84 @@ def set_spool_and_filament(url: str, spool: int, filament: int):
 
     print(f"Sending spool #{spool}, filament #{filament} to klipper", flush=True)
 
-    commands = {
-        "commands": [
-            f"SET_ACTIVE_SPOOL ID={spool}",
-            f"SET_ACTIVE_FILAMENT ID={filament}",
-        ]
-    }
-
     # In case the post fails, we might not know if the server has received
     # it or not, so set them to None:
     set_spool_and_filament.old_spool = None
     set_spool_and_filament.old_filament = None
 
     try:
-        response = requests.post(
-            url + "/api/printer/command", timeout=10, json=commands
-        )
-        if response.status_code != 200:
-            raise ValueError(f"Request to moonraker failed: {response}")
+        moonraker.set_spool_and_filament(spool, filament)
     except Exception as ex:  # pylint: disable=W0718
         print(ex)
+        return
 
     set_spool_and_filament.old_spool = spool
     set_spool_and_filament.old_filament = filament
 
 
-def get_data_from_ndef_records(records):
-    """Find wanted data from the NDEF records.
-
-    >>> import ndef
-    >>> record0 = ndef.TextRecord("")
-    >>> record1 = ndef.TextRecord("SPOOL:23\\n")
-    >>> record2 = ndef.TextRecord("FILAMENT:14\\n")
-    >>> record3 = ndef.TextRecord("SPOOL:23\\nFILAMENT:14\\n")
-    >>> get_data_from_ndef_records([record0])
-    (None, None)
-    >>> get_data_from_ndef_records([record3])
-    ('23', '14')
-    >>> get_data_from_ndef_records([record1])
-    ('23', None)
-    >>> get_data_from_ndef_records([record2])
-    (None, '14')
-    >>> get_data_from_ndef_records([record0, record3])
-    ('23', '14')
-    >>> get_data_from_ndef_records([record3, record0])
-    ('23', '14')
-    >>> get_data_from_ndef_records([record1, record2])
-    ('23', '14')
-    >>> get_data_from_ndef_records([record2, record1])
-    ('23', '14')
+@app.route("/w/<int:spool>/<int:filament>")
+def write_tag(spool, filament):
     """
-
-    spool = None
-    filament = None
-
-    for record in records:
-        if record.type == NDEF_TEXT_TYPE:
-            for line in record.text.splitlines():
-                line = line.split(":")
-                if len(line) == 2:
-                    if line[0] == SPOOL:
-                        spool = line[1]
-                    if line[0] == FILAMENT:
-                        filament = line[1]
-        else:
-            print(f"Read other record: {record}", flush=True)
-
-    return spool, filament
+    The web-api to write the spool & filament data to NFC/RFID tag
+    """
+    print(f"  write spool={spool}, filament={filament}")
+    if nfc_handler.write_to_tag(spool, filament):
+        return "OK"
+    return ("Failed to write to tag", 502)
 
 
-def on_nfc_connect(tag):
+@app.route("/")
+def index():
+    """
+    Returns the main index page.
+    """
+    spools = spoolman.get_spools()
+
+    return render_template("index.html", spools=spools)
+
+
+def on_nfc_tag_present(spool, filament):
     """Handles a read tag"""
 
-    if tag.ndef is None:
-        print("The tag doesn't have NDEF records", flush=True)
-        return True
-
-    spool, filament = get_data_from_ndef_records(tag.ndef.records)
-
-    if not args.clear:
+    if not args.get("clear_spool"):
         if not (spool and filament):
             print("Did not find spool and filament records in tag", flush=True)
-    if args.clear or (spool and filament):
+    if args.get("clear_spool") or (spool and filament):
         if not spool:
             spool = 0
         if not filament:
             filament = 0
-        set_spool_and_filament(args.url, spool, filament)
+        set_spool_and_filament(spool, filament)
 
-    # Don't let connect return until the tag is removed:
-    return True
+
+def on_nfc_no_tag_present():
+    """Called when no tag is present (or tag without data)"""
+    if args.get("clear_spool"):
+        set_spool_and_filament(0, 0)
 
 
 if __name__ == "__main__":
-    # Open NFC reader. Will throw an exception if it fails.
-    clf = nfc.ContactlessFrontend(args.nfc_device)
 
-    if args.clear:
+    if args.get("clear_spool"):
         # Start by unsetting current spool & filament:
-        set_spool_and_filament(args.url, 0, 0)
+        set_spool_and_filament(0, 0)
 
-    while True:
-        clf.connect(rdwr={"on-connect": on_nfc_connect})
-        # No tag connected anymore.
-        if args.clear:
-            set_spool_and_filament(args.url, 0, 0)
+    nfc_handler.set_no_tag_present_callback(on_nfc_no_tag_present)
+    nfc_handler.set_tag_present_callback(on_nfc_tag_present)
+
+
+    if not args.get('disable_web_server'):
+        print("Starting nfc-handler")
+        thread = threading.Thread(target=nfc_handler.run)
+        thread.daemon = True
+        thread.start()
+
+        print("Starting web server")
+        try:
+            app.run(args["web_address"], port=args["web_port"])
+        except Exception:
+            nfc_handler.stop()
+            thread.join()
+            raise
+    else:
+        nfc_handler.run()
