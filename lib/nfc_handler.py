@@ -4,6 +4,7 @@
 """ NFC tag handling """
 
 import time
+import logging
 from threading import Lock, Event
 
 import ndef
@@ -13,6 +14,8 @@ import nfc
 SPOOL = "SPOOL"
 FILAMENT = "FILAMENT"
 NDEF_TEXT_TYPE = "urn:nfc:wkt:T"
+
+logger = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
@@ -78,7 +81,7 @@ class NfcHandler:
                         if line[0] == FILAMENT:
                             filament = line[1]
             else:
-                print(f"Read other record: {record}", flush=True)
+                logger.info(f"Read other record: {record}")
 
         return spool, filament
 
@@ -128,7 +131,7 @@ class NfcHandler:
                 return True
             self.status = "Tag is write protected"
         except Exception as ex:  # pylint: disable=W0718
-            print(ex)
+            logger.exception(ex)
             self.status = "Got error while writing"
         return False
 
