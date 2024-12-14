@@ -5,6 +5,7 @@
 
 """Program to set current filament & spool in klipper, and write to tags. """
 
+import logging
 import threading
 import os
 
@@ -23,6 +24,11 @@ script_dir = os.path.dirname(__file__)
 cfg_filename = os.path.join(script_dir, "nfc2klipper-config.json5")
 with open(cfg_filename, "r", encoding="utf-8") as fp:
     args = json5.load(fp)
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
 
 spoolman = SpoolmanClient(args["spoolman-url"])
 moonraker = MoonrakerWebClient(args["moonraker-url"])
@@ -43,10 +49,10 @@ def set_spool_and_filament(spool: int, filament: int):
         set_spool_and_filament.old_spool == spool
         and set_spool_and_filament.old_filament == filament
     ):
-        print("Read same spool & filament", flush=True)
+        app.logger.info("Read same spool & filament")
         return
 
-    print(f"Sending spool #{spool}, filament #{filament} to klipper", flush=True)
+    app.logger.info(f"Sending spool #{spool}, filament #{filament} to klipper")
 
     # In case the post fails, we might not know if the server has received
     # it or not, so set them to None:
@@ -56,7 +62,7 @@ def set_spool_and_filament(spool: int, filament: int):
     try:
         moonraker.set_spool_and_filament(spool, filament)
     except Exception as ex:  # pylint: disable=W0718
-        print(ex)
+        app.logger.error(ex)
         return
 
     set_spool_and_filament.old_spool = spool
@@ -68,7 +74,7 @@ def write_tag(spool, filament):
     """
     The web-api to write the spool & filament data to NFC/RFID tag
     """
-    print(f"  write spool={spool}, filament={filament}")
+    app.logger.info(f"  write spool={spool}, filament={filament}")
     if nfc_handler.write_to_tag(spool, filament):
         return "OK"
     return ("Failed to write to tag", 502)
@@ -89,7 +95,7 @@ def on_nfc_tag_present(spool, filament):
 
     if not args.get("clear_spool"):
         if not (spool and filament):
-            print("Did not find spool and filament records in tag", flush=True)
+            app.logger.info("Did not find spool and filament records in tag")
     if args.get("clear_spool") or (spool and filament):
         if not spool:
             spool = 0
@@ -112,7 +118,6 @@ if __name__ == "__main__":
 
     nfc_handler.set_no_tag_present_callback(on_nfc_no_tag_present)
     nfc_handler.set_tag_present_callback(on_nfc_tag_present)
-
 
     if not args.get('disable_web_server'):
         print("Starting nfc-handler")
