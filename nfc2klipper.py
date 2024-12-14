@@ -27,7 +27,7 @@ with open(cfg_filename, "r", encoding="utf-8") as fp:
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s %(levelname)s: %(message)s'
+    format='%(asctime)s %(levelname)s - %(name)s: %(message)s'
 )
 
 spoolman = SpoolmanClient(args["spoolman-url"])
