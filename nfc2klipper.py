@@ -26,8 +26,7 @@ with open(cfg_filename, "r", encoding="utf-8") as fp:
     args = json5.load(fp)
 
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s %(levelname)s - %(name)s: %(message)s'
+    level=logging.DEBUG, format="%(asctime)s %(levelname)s - %(name)s: %(message)s"
 )
 
 spoolman = SpoolmanClient(args["spoolman-url"])
@@ -52,7 +51,7 @@ def set_spool_and_filament(spool: int, filament: int):
         app.logger.info("Read same spool & filament")
         return
 
-    app.logger.info(f"Sending spool #{spool}, filament #{filament} to klipper")
+    app.logger.info("Sending spool #%s, filament #%s to klipper", spool, filament)
 
     # In case the post fails, we might not know if the server has received
     # it or not, so set them to None:
@@ -74,7 +73,7 @@ def write_tag(spool, filament):
     """
     The web-api to write the spool & filament data to NFC/RFID tag
     """
-    app.logger.info(f"  write spool={spool}, filament={filament}")
+    app.logger.info("  write spool=%s, filament=%s", spool, filament)
     if nfc_handler.write_to_tag(spool, filament):
         return "OK"
     return ("Failed to write to tag", 502)
@@ -119,7 +118,7 @@ if __name__ == "__main__":
     nfc_handler.set_no_tag_present_callback(on_nfc_no_tag_present)
     nfc_handler.set_tag_present_callback(on_nfc_tag_present)
 
-    if not args.get('disable_web_server'):
+    if not args.get("disable_web_server"):
         print("Starting nfc-handler")
         thread = threading.Thread(target=nfc_handler.run)
         thread.daemon = True

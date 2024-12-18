@@ -81,7 +81,7 @@ class NfcHandler:
                         if line[0] == FILAMENT:
                             filament = line[1]
             else:
-                logger.info(f"Read other record: {record}")
+                logger.info("Read other record: %s", record)
 
         return spool, filament
 
