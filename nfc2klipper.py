@@ -21,7 +21,7 @@ FILAMENT = "FILAMENT"
 NDEF_TEXT_TYPE = "urn:nfc:wkt:T"
 
 script_dir = os.path.dirname(__file__)
-cfg_filename = os.path.join(script_dir, "nfc2klipper-config.json5")
+cfg_filename = os.path.join(os.path.expanduser("~"), "nfc2klipper-config.json5")
 with open(cfg_filename, "r", encoding="utf-8") as fp:
     args = json5.load(fp)
 
