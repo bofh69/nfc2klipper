@@ -20,8 +20,8 @@ SPOOL = "SPOOL"
 FILAMENT = "FILAMENT"
 NDEF_TEXT_TYPE = "urn:nfc:wkt:T"
 
-script_dir = os.path.dirname(__file__)
-cfg_filename = os.path.join(os.path.expanduser("~"), "nfc2klipper-config.json5")
+home_dir = os.path.expanduser("~")
+cfg_filename = os.path.join(home_dir, "nfc2klipper-config.json5")
 with open(cfg_filename, "r", encoding="utf-8") as fp:
     args = json5.load(fp)
 
