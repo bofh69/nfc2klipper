@@ -15,12 +15,16 @@ Set loaded spool &amp; filament in klipper from NFC/RFID tags.
 ## Prepare for running nfc2klipper
 
 In the cloned repository's dir run:
-```sh
+```console
 virtualenv venv
 venv/bin/pip3 install -r requirements.txt
 ```
 
-Update the config in `nfc2klipper-config.json5`.
+Add the config file to the home directory:
+
+```console
+cp ~/nfc2klipper/config/nfc2klipper-config.json5 ~/
+```
 
 ## Preparing an NFC reader
 
@@ -105,7 +109,7 @@ FILAMENT:2
 The numbers are the id numbers that will be sent to the macros in
 klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
 
-### Write tags with the **extperimental** web server
+### Write tags with the **experimental** web server
 
 It is possible to enable an **experimental** web server in `nfc2klipper.py`.
 It will then serve a web page for writing to the tags.
@@ -115,7 +119,7 @@ where `mainsailos.local` should be replaced with the computer's name (or IP addr
 The program uses a development web server with **no security** at all so it
 shouldn't be run if the computer is running on an untrusted network.
 
-The program has a configuration file (nfc2klipper-config.json5) for
+The program has a configuration file (`~/nfc2klipper-config.json5`) for
 enabling the web server, setting the port number, addresses to moonraker
 and mainsail, the webserver's address and NFC device to use.
 
@@ -133,8 +137,6 @@ writes to the tag.
 
 Use the `write_tag` script to stop the nfc2klipper service, run the
 `write_tags.py` program and then start the service again after.
-
-
 
 ## Run automaticly with systemd
 
