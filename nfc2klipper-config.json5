@@ -18,6 +18,6 @@
     /// URL for the moonraker installation
     "moonraker-url": "http://mainsailos.local",
 
-    /// URL for the moonraker installation
+    /// URL for the spoolman installation
     "spoolman-url": "http://mainsailos.local:7912",
 }
