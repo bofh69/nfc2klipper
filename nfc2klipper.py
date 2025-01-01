@@ -119,12 +119,12 @@ if __name__ == "__main__":
     nfc_handler.set_tag_present_callback(on_nfc_tag_present)
 
     if not args.get("disable_web_server"):
-        print("Starting nfc-handler")
+        app.logger.info("Starting nfc-handler")
         thread = threading.Thread(target=nfc_handler.run)
         thread.daemon = True
         thread.start()
 
-        print("Starting web server")
+        app.logger.info("Starting web server")
         try:
             app.run(args["web_address"], port=args["web_port"])
         except Exception:
