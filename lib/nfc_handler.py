@@ -9,6 +9,7 @@ from threading import Lock, Event
 
 import ndef
 import nfc
+from nfc.clf import RemoteTarget
 
 
 SPOOL = "SPOOL"
@@ -110,12 +111,16 @@ class NfcHandler:
                             self.on_nfc_no_tag_present()
                     else:
                         self._read_from_tag(tag)
-                    while clf.connect(rdwr={"on-connect": lambda tag: False}):
+
+                    # Wait for the tag to be removed.
+                    while clf.sense(
+                        RemoteTarget("106A"), RemoteTarget("106B"), RemoteTarget("212F")
+                    ):
                         if self._check_for_write_to_tag(tag):
                             self._read_from_tag(tag)
-                        time.sleep(0.1)
+                        time.sleep(0.2)
                 else:
-                    time.sleep(0.1)
+                    time.sleep(0.2)
 
     def stop(self):
         """Call to stop the handler"""
