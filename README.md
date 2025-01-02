@@ -20,7 +20,7 @@ virtualenv venv
 venv/bin/pip3 install -r requirements.txt
 ```
 
-Update the config in `nfc2klipper-config.json5`.
+Copy and update the `nfc2klipper.cfg` to `~/.config/nfc2klipper/nfc2klipper.cfg`.
 
 ## Preparing an NFC reader
 
@@ -115,7 +115,7 @@ where `mainsailos.local` should be replaced with the computer's name (or IP addr
 The program uses a development web server with **no security** at all so it
 shouldn't be run if the computer is running on an untrusted network.
 
-The program has a configuration file (nfc2klipper-config.json5) for
+The program has a configuration file (`~/.config/nfc2klipper/nfc2klipper.cfg`) for
 enabling the web server, setting the port number, addresses to moonraker
 and mainsail, the webserver's address and NFC device to use.
 

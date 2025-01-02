@@ -6,11 +6,14 @@
 """Program to set current filament & spool in klipper, and write to tags. """
 
 import logging
-import threading
 import os
+import sys
+import shutil
+import threading
+from pathlib import Path
 
 from flask import Flask, render_template
-import json5
+import toml
 
 from lib.moonraker_web_client import MoonrakerWebClient
 from lib.nfc_handler import NfcHandler
@@ -20,18 +23,39 @@ SPOOL = "SPOOL"
 FILAMENT = "FILAMENT"
 NDEF_TEXT_TYPE = "urn:nfc:wkt:T"
 
-script_dir = os.path.dirname(__file__)
-cfg_filename = os.path.join(script_dir, "nfc2klipper-config.json5")
-with open(cfg_filename, "r", encoding="utf-8") as fp:
-    args = json5.load(fp)
+CFG_DIR = "~/.config/nfc2klipper"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s %(levelname)s - %(name)s: %(message)s"
 )
 
-spoolman = SpoolmanClient(args["spoolman-url"])
-moonraker = MoonrakerWebClient(args["moonraker-url"])
-nfc_handler = NfcHandler(args["nfc-device"])
+args = None  # pylint: disable=C0103
+for path in ["~/nfc2klipper.cfg", CFG_DIR + "/nfc2klipper.cfg"]:
+    cfg_filename = os.path.expanduser(path)
+    if os.path.exists(cfg_filename):
+        with open(cfg_filename, "r", encoding="utf-8") as fp:
+            args = toml.load(fp)
+            break
+
+if not args:
+    print(
+        "WARNING: The config file is missing, installing a default version.",
+        file=sys.stderr,
+    )
+    if not os.path.exists(CFG_DIR):
+        cfg_dir = os.path.expanduser(CFG_DIR)
+        print(f"Creating dir {cfg_dir}", file=sys.stderr)
+        Path(cfg_dir).mkdir(parents=True, exist_ok=True)
+    script_dir = os.path.dirname(__file__)
+    from_filename = os.path.join(script_dir, "nfc2klipper.cfg")
+    to_filename = os.path.join(cfg_dir, "nfc2klipper.cfg")
+    shutil.copyfile(from_filename, to_filename)
+    print(f"Created {to_filename}, please update it", file=sys.stderr)
+    sys.exit(1)
+
+spoolman = SpoolmanClient(args["spoolman"]["spoolman-url"])
+moonraker = MoonrakerWebClient(args["moonraker"]["moonraker-url"])
+nfc_handler = NfcHandler(args["nfc"]["nfc-device"])
 
 
 app = Flask(__name__)
@@ -89,13 +113,20 @@ def index():
     return render_template("index.html", spools=spools)
 
 
+def should_clear_spool() -> bool:
+    """Returns True if the config says the spool should be cleared"""
+    if args["moonraker"].get("clear_spool"):
+        return True
+    return False
+
+
 def on_nfc_tag_present(spool, filament):
     """Handles a read tag"""
 
-    if not args.get("clear_spool"):
+    if not should_clear_spool():
         if not (spool and filament):
             app.logger.info("Did not find spool and filament records in tag")
-    if args.get("clear_spool") or (spool and filament):
+    if should_clear_spool() or (spool and filament):
         if not spool:
             spool = 0
         if not filament:
@@ -105,20 +136,20 @@ def on_nfc_tag_present(spool, filament):
 
 def on_nfc_no_tag_present():
     """Called when no tag is present (or tag without data)"""
-    if args.get("clear_spool"):
+    if should_clear_spool():
         set_spool_and_filament(0, 0)
 
 
 if __name__ == "__main__":
 
-    if args.get("clear_spool"):
+    if should_clear_spool():
         # Start by unsetting current spool & filament:
         set_spool_and_filament(0, 0)
 
     nfc_handler.set_no_tag_present_callback(on_nfc_no_tag_present)
     nfc_handler.set_tag_present_callback(on_nfc_tag_present)
 
-    if not args.get("disable_web_server"):
+    if not args["webserver"].get("disable_web_server"):
         app.logger.info("Starting nfc-handler")
         thread = threading.Thread(target=nfc_handler.run)
         thread.daemon = True
@@ -126,7 +157,9 @@ if __name__ == "__main__":
 
         app.logger.info("Starting web server")
         try:
-            app.run(args["web_address"], port=args["web_port"])
+            app.run(
+                args["webserver"]["web_address"], port=args["webserver"]["web_port"]
+            )
         except Exception:
             nfc_handler.stop()
             thread.join()
