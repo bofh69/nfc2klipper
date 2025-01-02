@@ -62,7 +62,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
             class="btn btn-outline-primary btn-sm"
             onclick="x({{spool['id']}}, {{spool['filament']['id']}})"
             >Write</button>
-    {{spool['id']}}: {{spool['filament']['vendor']['name']}} - {{spool['filament']['name']}}
+    {{spool['id']}}: {{spool['filament']['vendor']['name']}} - {{spool['filament']['material']}} - {{spool['filament']['name']}}
   </li>
   {% endfor %}
 </ul>
