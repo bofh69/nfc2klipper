@@ -50,7 +50,7 @@ args = parser.parse_args()
 
 def record_to_text(record):
     """Translate a json spool object to a readable string"""
-    return f"#{record['id']} {record['filament']['vendor']['name']} - {record['filament']['name']}"
+    return f"#{record['id']} {record['filament']['vendor']['name']} - {record['filament']['material']} - {record['filament']['name']}"
 
 
 class PostList(npyscreen.MultiLineAction):
@@ -76,6 +76,7 @@ class PostSelectForm(npyscreen.FormBaseNew):
         url = args.url + "/api/v1/spool"
         records = requests.get(url, timeout=10)
         self.records = json.loads(records.text)
+        self.records = sorted(self.records, key=lambda x: x['id'], reverse=True)
 
         self.posts = self.add(
             PostList,
