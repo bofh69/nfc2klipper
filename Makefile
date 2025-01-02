@@ -9,6 +9,7 @@ VENV_TIMESTAMP:=$(VENV)/.timestamp
 PIP:=$(VENV)/bin/pip3
 BLACK:=$(VENV)/bin/black
 PYLINT:=$(VENV)/bin/pylint
+REUSE:=$(VENV)/bin/reuse
 
 SRC=$(wildcard *.py lib/*.py)
 
@@ -30,13 +31,19 @@ $(BLACK): $(VENV_TIMESTAMP)
 $(PYLINT): $(VENV_TIMESTAMP)
 	$(PIP) install pylint
 
+$(REUSE): $(VENV_TIMESTAMP)
+	$(PIP) install reuse
+
 fmt: $(BLACK)
 	$(BLACK) $(SRC)
 
 lint: $(PYLINT)
 	$(PYLINT) $(SRC)
 
+reuse: $(REUSE)
+	$(REUSE) lint
+
 clean:
 	@rm -rf $(VENV) 2>/dev/null
 
-.PHONY: clean fmt lint
+.PHONY: clean fmt lint reuse
