@@ -78,8 +78,8 @@ to:
 
 When a tag has been read, it will send these gcodes to Klipper:
 
-* SET_ACTIVE_FILAMENT ID=n1
-* SET_ACTIVE_SPOOL ID=n2
+* `SET_ACTIVE_FILAMENT ID=n1`
+* `SET_ACTIVE_SPOOL ID=n2`
 
 
 See [klipper-spoolman.cfg](klipper-spoolman.cfg) for the klipper
@@ -154,3 +154,11 @@ To see its status, run:
 ```sh
 sudo systemctl status nfc2klipper
 ```
+
+## Developer info
+
+Pull requests are happily accepted, but before making one make sure
+the code is formatted with black and passes pylint without errors.
+
+The code can be formatted by running `make fmt` and checked with pylint
+with `make lint`.
