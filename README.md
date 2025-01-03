@@ -20,7 +20,12 @@ virtualenv venv
 venv/bin/pip3 install -r requirements.txt
 ```
 
-Update the config in `nfc2klipper-config.json5`.
+Copy `nfc2klipper-config.json5.dist` to `nfc2klipper-config.json5`
+```sh
+cp nfc2klipper-config.json5.dist nfc2klipper-config.json5
+```
+
+Now edit the config in `nfc2klipper-config.json5`
 
 ## Preparing an NFC reader
 
