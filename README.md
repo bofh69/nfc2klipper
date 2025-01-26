@@ -150,6 +150,16 @@ To see its status, run:
 sudo systemctl status nfc2klipper
 ```
 
+## Automatic upgrades with moonraker
+
+Moonraker can be configured to help upgrade nfc2klipper.
+
+Copy the the `moonraker-nfc2klipper.cfg` file to the same dir as where
+`moonraker.conf` is. Include the config file by adding:
+```toml
+[include moonraker-nfc2klipper.cfg]
+```
+
 ## Developer info
 
 Pull requests are happily accepted, but before making one make sure
