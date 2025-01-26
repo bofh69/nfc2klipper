@@ -1,0 +1,11 @@
+--- pn532.py	2025-01-26 16:10:08.660068072 +0100
++++ venv/lib/python3.10/site-packages/nfc/clf/pn532.py	2025-01-26 16:10:10.912075912 +0100
+@@ -387,7 +387,7 @@
+         # wait between close and open it all goes fine until the wait
+         # time reaches 3 seconds, and so on.
+         initial_timeout = 100   # milliseconds
+-        change_baudrate = True  # try higher speeds
++        change_baudrate = False  # try higher speeds
+         if sys.platform.startswith('linux'):
+             board = b""  # Raspi board will identify through device tree
+             try:

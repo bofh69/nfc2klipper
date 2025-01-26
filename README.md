@@ -54,7 +54,7 @@ This seems to be due to a bug in nfcpy (version 1.0.4),
 see (https://github.com/nfcpy/nfcpy/issues/186).
 
 A workaround that works for me is to change
-`venv/lib/python3.7/site-packages/nfc/clf/pn532.py`
+`venv/lib/python3.*/site-packages/nfc/clf/pn532.py`
 around line 390, from:
 
 ```python
@@ -67,6 +67,10 @@ to:
         change_baudrate = False  # try higher speeds
 ```
 
+There is an included patch file that can be applied:
+```sh
+patch -p6 venv/lib/python3.*/site-packages/nfc/clf/pn532.py < pn532.py.patch
+```
 
 
 ## Preparing klipper
