@@ -164,10 +164,12 @@ Copy the the `moonraker-nfc2klipper.cfg` file to the same dir as where
 [include moonraker-nfc2klipper.cfg]
 ```
 
+## See also
+If nfc2klipper doesn't work for some reason, [spool2klipper](https://github.com/bofh69/spool2klipper) can be use to automatically update the `active_filament` variable whenever the spool is changed in Moonraker (when changing it in the frontend for example). That way `ASSERT_ACTIVE_FILAMENT` will still work correctly.
+
 ## Developer info
 
 Pull requests are happily accepted, but before making one make sure
-the code is formatted with black and passes pylint without errors.
+the code is formatted correctly and linted without errors.
 
-The code can be formatted by running `make fmt` and checked with pylint
-with `make lint`.
+Format the code by running `make fmt` and lint it with `make lint`.
