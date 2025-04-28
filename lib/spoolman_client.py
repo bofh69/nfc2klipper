@@ -4,6 +4,7 @@
 """Spoolman client"""
 
 import json
+from typing import Any, Optional
 import requests
 
 
@@ -24,3 +25,15 @@ class SpoolmanClient:
             raise ValueError(f"Request to spoolman failed: {response}")
         records = json.loads(response.text)
         return records
+
+    def get_spool_from_nfc_id(self, nfc_id: str) -> Optional[Any]:
+        """Get the spool with the given nfc_id"""
+        nfc_id = f'"{nfc_id}"'
+        spools = self.get_spools()
+        for spool in spools:
+            if "extra" in spool:
+                stored_id = spool["extra"].get("nfc_id")
+                if stored_id == nfc_id:
+                    return spool
+
+        return None
