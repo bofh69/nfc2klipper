@@ -164,4 +164,4 @@ class NfcHandler:
         """Read data from tag and call callback"""
         if self.on_nfc_tag_present:
             spool, filament = NfcHandler.get_data_from_ndef_records(tag.ndef.records)
-            self.on_nfc_tag_present(spool, filament)
+            self.on_nfc_tag_present(spool, filament, tag.identifier.hex())

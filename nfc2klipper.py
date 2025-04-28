@@ -120,13 +120,22 @@ def should_clear_spool() -> bool:
     return False
 
 
-def on_nfc_tag_present(spool, filament):
+def on_nfc_tag_present(spool, filament, identifier):
     """Handles a read tag"""
 
-    if not should_clear_spool():
-        if not (spool and filament):
-            app.logger.info("Did not find spool and filament records in tag")
-    if should_clear_spool() or (spool and filament):
+    if not (spool and filament):
+        app.logger.debug("Fetching data from spoolman from tags' id: %s", identifier)
+        spool_data = spoolman.get_spool_from_nfc_id(identifier)
+        if spool_data:
+            spool = spool_data.get("id")
+            if "filament" in spool_data:
+                filament = spool_data["filament"].get("id")
+        else:
+            app.logger.info(
+                "Did not find spool records in tag nor from its id (%s) in spoolman",
+                identifier,
+            )
+    if spool and filament:
         if not spool:
             spool = 0
         if not filament:
