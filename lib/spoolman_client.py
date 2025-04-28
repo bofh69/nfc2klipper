@@ -28,11 +28,13 @@ class SpoolmanClient:
 
     def get_spool_from_nfc_id(self, nfc_id: str) -> Optional[Any]:
         """Get the spool with the given nfc_id"""
-        nfc_id = f'"{nfc_id}"'
+        nfc_id = f'"{nfc_id.upper()}"'
         spools = self.get_spools()
         for spool in spools:
             if "extra" in spool:
                 stored_id = spool["extra"].get("nfc_id")
+                if stored_id:
+                    stored_id = stored_id.upper()
                 if stored_id == nfc_id:
                     return spool
 
