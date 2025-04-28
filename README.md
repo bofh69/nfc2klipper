@@ -100,6 +100,30 @@ This can be done automatically by using [spoolman2slicer](https://github.com/bof
 
 ## Preparing tags
 
+Tags can either contain custom data for nfc2klipper, or the tags'
+id can be used to lookup the spool in Spoolman.
+
+The first method allows the system to work even if spoolman isn't
+working for the moment. The built in web server can also be used
+to write the data to new tags.
+
+The second method allows nfc2klipper to be used with
+[FilaMan](https://github.com/ManuelW77/Filaman) and with manufacturers'
+tags with different format. There is not yet a function to
+update Spoolman's spool with the tag's id.
+
+
+### Using tag's id
+
+Add an extra field in Spoolman for the spools called `nfc_id`.
+
+If not done by FilaMan, add the tags' identifier to the spools' `nfc_id` field with Spoolman's web pages.
+The id can be read in nfc2klipper's logs. It writes it there after
+reading the tag.
+
+
+### SPOOL & FILAMENT in tags
+
 The tags should contain an NDEF record with a text block like this:
 ```
 SPOOL:3
@@ -109,7 +133,7 @@ FILAMENT:2
 The numbers are the id numbers that will be sent to the macros in
 klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
 
-### Write tags with the **extperimental** web server
+#### Write tags with the **extperimental** web server
 
 It is possible to enable an **experimental** web server in `nfc2klipper.py`.
 It will then serve a web page for writing to the tags.
@@ -124,12 +148,12 @@ enabling the web server, setting the port number, addresses to moonraker
 and mainsail, the webserver's address and NFC device to use.
 
 
-### Write with an app
+#### Write with an app
 
 There is an Android app, [Spoolman Companion](https://github.com/V-aruu/SpoolCompanion), for writing
 to the tags.
 
-### Write with console application
+#### Write with console application
 
 The `write_tags.py` program fetches Spoolman's spools, shows a simple
 text interface where the spool can be chosen, and when pressing return,
