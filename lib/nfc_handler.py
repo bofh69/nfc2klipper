@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2024 Sebastian Andersson <sebastian@bittr.nu>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-""" NFC tag handling """
+"""NFC tag handling"""
 
 import time
 import logging
