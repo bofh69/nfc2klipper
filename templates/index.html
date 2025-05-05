@@ -40,18 +40,38 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 });
           return false;
         }
+
+    function snfc(spool) {
+          const status = document.getElementById("status");
+          status.className = "alert alert-info";
+          status.textContent = "Sending nfc id to Spoolman...";
+          fetch("/set_nfc_id/" + spool)
+            .then((result) => {
+                  if (!result.ok) {
+                        result.text().then((text) => {
+                              const status = document.getElementById("status");
+                              status.textContent = "Failed to send NFC tag id to Spoolman: " + text;
+                              status.className = "alert alert-danger";
+                            });
+                        throw new Error("Could not send nfc_id to Spoolman");
+                      }
+                  return result.text();
+                })
+            .then((text) => {
+                  const status = document.getElementById("status");
+                  status.textContent = "Wrote NFC tag id to Spoolman";
+                  status.className = "alert alert-success";
+                })
+            .catch((error) => {
+                  console.error("Failed to request NFC tag_id sending:", error);
+                });
+          return false;
+        }
   </script>
 </head>
 <body>
 <div class="container">
 <h1>Write NFC Tag</h1>
-<!--
-<div><a href="/">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
-        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
-        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
-    </svg>Reload</a></div>
--->
 
 <div id="status" role="alert">&nbsp;</div>
 
@@ -60,9 +80,19 @@ SPDX-License-Identifier: GPL-3.0-or-later
   <li>
     <button type="button"
             class="btn btn-outline-primary btn-sm"
+	    onclick="snfc({{spool['id']}})"
+            >Set in Spoolman</button>
+    <button type="button"
+            class="btn btn-outline-primary btn-sm"
             onclick="x({{spool['id']}}, {{spool['filament']['id']}})"
             >Write</button>
     {{spool['id']}}: {{spool['filament']['vendor']['name']}} - {{spool['filament']['material']}} - {{spool['filament']['name']}}
+    {% if spool['extra'] and spool['extra']['nfc_id'] == '"' + nfc_id + '"' %}
+	    (current nfc-id)
+    {% endif %}
+    {% if spool['id'] == spool_id %}
+	    (current spool-id)
+    {% endif %}
   </li>
   {% endfor %}
 </ul>
