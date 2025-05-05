@@ -57,6 +57,8 @@ spoolman = SpoolmanClient(args["spoolman"]["spoolman-url"])
 moonraker = MoonrakerWebClient(args["moonraker"]["moonraker-url"])
 nfc_handler = NfcHandler(args["nfc"]["nfc-device"])
 
+last_nfc_id = None  # pylint: disable=C0103
+last_spool_id = None  # pylint: disable=C0103
 
 app = Flask(__name__)
 
@@ -114,6 +116,22 @@ def write_tag(spool, filament):
     return ("Failed to write to tag", 502)
 
 
+@app.route("/set_nfc_id/<int:spool>")
+def set_nfc_id(spool):
+    """
+    The web-api to write the current nfc_id to spool's nfc_id field in Spoolman
+    """
+    app.logger.info("Set nfc_id=%s to spool=%s in Spoolman", last_nfc_id, spool)
+
+    if last_nfc_id is None:
+        return ("No nfc_id to write", 502)
+
+    if spoolman.set_nfc_id_for_spool(spool, last_nfc_id):
+        return "OK"
+
+    return ("Failed to send nfc_id to Spoolman", 502)
+
+
 @app.route("/")
 def index():
     """
@@ -121,7 +139,12 @@ def index():
     """
     spools = spoolman.get_spools()
 
-    return render_template("index.html", spools=spools)
+    spool_id = last_spool_id
+    if spool_id:
+        spool_id = int(spool_id)
+    return render_template(
+        "index.html", spools=spools, nfc_id=last_nfc_id, spool_id=spool_id
+    )
 
 
 def should_clear_spool() -> bool:
@@ -133,6 +156,13 @@ def should_clear_spool() -> bool:
 
 def on_nfc_tag_present(spool, filament, identifier):
     """Handles a read tag"""
+
+    if identifier:
+        global last_nfc_id  # pylint: disable=W0603
+        last_nfc_id = identifier
+    if spool:
+        global last_spool_id  # pylint: disable=W0603
+        last_spool_id = spool
 
     if not (spool and filament):
         app.logger.debug("Fetching data from spoolman from tags' id: %s", identifier)

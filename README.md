@@ -126,22 +126,19 @@ Tags can either contain custom data for nfc2klipper, or the tags'
 id can be used to lookup the spool in Spoolman.
 
 The first method allows the system to work even if spoolman isn't
-working for the moment. The built in web server can also be used
-to write the data to new tags.
+working for the moment.
 
 The second method allows nfc2klipper to be used with
 [FilaMan](https://github.com/ManuelW77/Filaman) and with manufacturers'
-tags with different format. There is not yet a function to
-update Spoolman's spool with the tag's id.
+tags with different format.
 
 
 ### Using tag's id
 
 Add an extra field in Spoolman for the spools called `nfc_id`.
 
-If not done by FilaMan, add the tags' identifier to the spools' `nfc_id` field with Spoolman's web pages.
-The id can be read in nfc2klipper's logs. It writes it there after
-reading the tag.
+If not already done by FilaMan, the latest read tags' identifier can
+be set in Spoolman via the web server's page, click on the "Set in Spoolman" button.
 
 
 ### SPOOL & FILAMENT in tags
@@ -168,6 +165,11 @@ shouldn't be run if the computer is running on an untrusted network.
 The program has a configuration file (`~/.config/nfc2klipper/nfc2klipper.cfg`) for
 enabling the web server, setting the port number, addresses to moonraker
 and mainsail, the webserver's address and NFC device to use.
+
+The web page lists the current spools in Spoolman.
+By pressing the "Write" button, its info is written to the nfc/rfid tag.
+By pressing the "Set in Spoolman" button, the tag's id is set for that
+Spool in Spoolman.
 
 
 #### Write with an app
