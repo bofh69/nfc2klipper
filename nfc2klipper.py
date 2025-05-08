@@ -61,6 +61,17 @@ nfc_handler = NfcHandler(args["nfc"]["nfc-device"])
 app = Flask(__name__)
 
 
+def should_always_send():
+    """Should SET_ACTIVE_* macros always be called when tag is read,
+    or only when different?"""
+    always_send = args["moonraker"].get("always-send")
+
+    if always_send is None:
+        return False
+
+    return always_send
+
+
 def set_spool_and_filament(spool: int, filament: int):
     """Calls moonraker with the current spool & filament"""
 
@@ -68,7 +79,7 @@ def set_spool_and_filament(spool: int, filament: int):
         set_spool_and_filament.old_spool = None
         set_spool_and_filament.old_filament = None
 
-    if (
+    if not should_always_send() and (
         set_spool_and_filament.old_spool == spool
         and set_spool_and_filament.old_filament == filament
     ):
