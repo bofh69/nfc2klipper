@@ -10,7 +10,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # nfc2klipper
 
-Set loaded spool &amp; filament in klipper from NFC/RFID tags.
+<p>
+Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID tags.
+
+<img align="right" src="images/nfc_reader_on_voron.jpg" width="200" height="158" alt="NFC Reader on Voron" />
+</p>
 
 ## Prepare for running nfc2klipper
 
