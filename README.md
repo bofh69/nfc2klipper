@@ -16,6 +16,24 @@ Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID 
 <img align="right" src="images/nfc_reader_on_voron.jpg" width="200" height="158" alt="NFC Reader on Voron" />
 </p>
 
+- Table of Contents
+  - [Prepare for running nfc2klipper](#prepare-for-running-nfc2klipper)
+  - [Preparing an NFC reader](#preparing-an-nfc-reader)
+    - [PN532 bug in the nfcpy module](#pn532-bug-in-the-nfcpy-module)
+  - [Preparing klipper](#preparing-klipper)
+  - [Preparing the slicer](#preparing-the-slicer)
+  - [Preparing tags](#preparing-tags)
+    - [Using tag's id](#using-tags-id)
+    - [SPOOL & FILAMENT in tags](#spool--filament-in-tags)
+      - [Write tags with the **extperimental** web server](#write-tags-with-the-extperimental-web-server)
+      - [Write with an app](#write-with-an-app)
+      - [Write with console application](#write-with-console-application)
+  - [Run automatically with systemd](#run-automatically-with-systemd)
+  - [Automatic upgrades with moonraker](#automatic-upgrades-with-moonraker)
+  - [See also](#see-also)
+  - [Developer info](#developer-info)
+
+
 ## Prepare for running nfc2klipper
 
 In the cloned repository's dir run:
@@ -168,7 +186,7 @@ Use the `write_tag` script to stop the nfc2klipper service, run the
 
 
 
-## Run automaticly with systemd
+## Run automatically with systemd
 
 Copy nfc2klippper.service to `/etc/systemd/system`, then run:
 
