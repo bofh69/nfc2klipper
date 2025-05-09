@@ -25,7 +25,7 @@ Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID 
   - [Preparing tags](#preparing-tags)
     - [Using tag's id](#using-tags-id)
     - [SPOOL & FILAMENT in tags](#spool--filament-in-tags)
-      - [Write tags with the **extperimental** web server](#write-tags-with-the-extperimental-web-server)
+      - [Write tags with the **experimental** web server](#write-tags-with-the-experimental-web-server)
       - [Write with an app](#write-with-an-app)
       - [Write with console application](#write-with-console-application)
   - [Run automatically with systemd](#run-automatically-with-systemd)
@@ -155,7 +155,7 @@ FILAMENT:2
 The numbers are the id numbers that will be sent to the macros in
 klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
 
-#### Write tags with the **extperimental** web server
+#### Write tags with the **experimental** web server
 
 It is possible to enable an **experimental** web server in `nfc2klipper.py`.
 It will then serve a web page for writing to the tags.
@@ -188,7 +188,7 @@ Use the `write_tag` script to stop the nfc2klipper service, run the
 
 ## Run automatically with systemd
 
-Copy nfc2klippper.service to `/etc/systemd/system`, then run:
+Copy nfc2klipper.service to `/etc/systemd/system`, then run:
 
 ```sh
 sudo systemctl start nfc2klipper
@@ -204,7 +204,7 @@ sudo systemctl status nfc2klipper
 
 Moonraker can be configured to help upgrade nfc2klipper.
 
-Copy the the `moonraker-nfc2klipper.cfg` file to the same dir as where
+Copy the `moonraker-nfc2klipper.cfg` file to the same dir as where
 `moonraker.conf` is. Include the config file by adding:
 ```toml
 [include moonraker-nfc2klipper.cfg]
