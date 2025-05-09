@@ -1,170 +1,131 @@
 <!--
-SPDX-FileCopyrightText: 2025 Sebastian Andersson <sebastian@bittr.nu>
+-SPDX-FileCopyrightText: 2025 Sebastian Andersson <sebastian@bittr.nu>
+-
+-SPDX-License-Identifier: GPL-3.0-or-later
+--->
 
-SPDX-License-Identifier: GPL-3.0-or-later
--->
+# nfc2klipper
 
 [![REUSE status](https://api.reuse.software/badge/github.com/bofh69/nfc2klipper)](https://api.reuse.software/info/github.com/bofh69/nfc2klipper)
 ![GitHub Workflow Status](https://github.com/bofh69/nfc2klipper/actions/workflows/pylint.yml/badge.svg)
 
-
-# nfc2klipper
-
 <p>
-Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID tags.
+<img align="right" src="images/nfc_reader_on_voron.webp" width="200" height="158" alt="NFC Reader on Voron" />
+<div> Automatically integrates Spoolman and Klipper by using NFC/RFID tags on filament spools.
+This project makes it easy to manage and track filament usage with your 3D printer.
+</div>
 
-<img align="right" src="images/nfc_reader_on_voron.jpg" width="200" height="158" alt="NFC Reader on Voron" />
 </p>
 
-- Table of Contents
-  - [Prepare for running nfc2klipper](#prepare-for-running-nfc2klipper)
-  - [Preparing an NFC reader](#preparing-an-nfc-reader)
-    - [PN532 bug in the nfcpy module](#pn532-bug-in-the-nfcpy-module)
-  - [Preparing klipper](#preparing-klipper)
-  - [Preparing the slicer](#preparing-the-slicer)
-  - [Preparing tags](#preparing-tags)
-    - [Using tag's id](#using-tags-id)
-    - [SPOOL & FILAMENT in tags](#spool--filament-in-tags)
-      - [Write tags with the **experimental** web server](#write-tags-with-the-experimental-web-server)
-      - [Write with an app](#write-with-an-app)
-      - [Write with console application](#write-with-console-application)
-  - [Run automatically with systemd](#run-automatically-with-systemd)
-  - [Automatic upgrades with moonraker](#automatic-upgrades-with-moonraker)
-  - [See also](#see-also)
-  - [Developer info](#developer-info)
+---
+
+## Key Features
+- **NFC/RFID Integration**: Automatically detects and sets the loaded spool's id in Klipper.
+- **Flexible Tag Formats**: Supports both custom data and manufacturer tags.
+- **Ease of Use**: Includes an experimental web server and there is an Android app for writing tags.
+- **Automation**: Systemd support for automatic startup and Moonraker integration for easy upgrades.
 
 
-## Prepare for running nfc2klipper
+## Table of Contents
+- [Installation](#installation)
+- [Preparing Hardware](#preparing-hardware)
+  - [NFC Reader Setup](#nfc-reader-setup)
+  - [PN532 Bug Fix](#pn532-bug-fix)
+- [Klipper Configuration](#klipper-configuration)
+- [Slicer Configuration](#slicer-configuration)
+- [Tag Preparation](#tag-preparation)
+  - [Using Tag IDs](#using-tag-ids)
+  - [Storing Spool & Filament Data](#storing-spool--filament-data)
+- [Automation](#automation)
+  - [Systemd Setup](#systemd-setup)
+  - [Moonraker Upgrades](#moonraker-upgrades)
+- [Additional Resources](#additional-resources)
+- [Developer Guide](#developer-guide)
+- [License](#license)
 
-In the cloned repository's dir run:
-```sh
-virtualenv venv
-venv/bin/pip3 install -r requirements.txt
-```
+## Installation
+1. Clone this repository:
+   ```sh
+   git clone https://github.com/bofh69/nfc2klipper.git
+   cd nfc2klipper
+   ```
+2. Create a virtual environment and install dependencies:
+   ```sh
+   virtualenv venv
+   venv/bin/pip3 install -r requirements.txt
+   ```
+3. Copy the configuration file and update it as needed:
+   ```sh
+   cp nfc2klipper.cfg ~/.config/nfc2klipper/nfc2klipper.cfg
+   ```
 
-Copy and update the `nfc2klipper.cfg` to `~/.config/nfc2klipper/nfc2klipper.cfg`.
+## Preparing Hardware
 
-## Preparing an NFC reader
+### NFC Reader Setup
+- Use a `nfcpy` supported reader. I use the Elechouse PN532 NFC RFID Module V3.
+- Connect the reader to your Raspberry Pi. I use a UART port.
+- IMPORTANT: Power the reader from the 3.3V pin to avoid damaging the Raspberry Pi GPIO.
 
-I use a PN532 based reader (Elechouse PN532 NFC RFID Module V3, if you
-want to use the same) connected via UART to the raspberry pi where this
-program is running.
+For installation details, see [Adafruit's guide](https://learn.adafruit.com/adafruit-nfc-rfid-on-raspberry-pi/pi-serial-port). Note to adjust the VCC pin configuration.
 
-
-Many pages suggest connecting its VCC pin to 5V on the RPi. Don't!
-It can run from 3.3V and then it won't risk slowly destroying the RPi's
-GPIO pins.
-
-
-See [here](https://learn.adafruit.com/adafruit-nfc-rfid-on-raspberry-pi/pi-serial-port)
-for how to configure a raspberry pi for it (but change VCC pin...).
-
-Run `sudo rpi-update` to avoid problems with older firmware on the pi.
-
-There is a model for attaching it to the printer
+A printable model for mounting that NFC reader to a 2020 profile is available
 [here](https://www.printables.com/model/798929-elechouse-pn532-v3-nfc-holder-for-voron-for-spoolm).
 
+### pynfc Bug Fix
 
-### PN532 bug in the nfcpy module
+There is a bug in pynfc (v1.0.4) that may affect the PN532 reader so it
+has to be power-cycled after running nfc2klipper. See (https://github.com/nfcpy/nfcpy/issues/186).
 
-When running it on a raspberry pi's mini-uart (ttyS0 as device), it works fine.
-When using the other UART (ttyAMA0), I can only run the programs once.
-I have to power cycle the PN532 to get them to run again. Just rebooting
-the pi doesn't help.
-
-This seems to be due to a bug in nfcpy (version 1.0.4),
-see (https://github.com/nfcpy/nfcpy/issues/186).
-
-A workaround that works for me is to change
-`venv/lib/python3.*/site-packages/nfc/clf/pn532.py`
-around line 390, from:
-
-```python
-        change_baudrate = True  # try higher speeds
-```
-
-to:
-
-```python
-        change_baudrate = False  # try higher speeds
-```
-
-There is an included patch file that can be applied:
+Included is a patch that fixes that problem. Apply the included patch as follows:
 ```sh
 patch -p6 venv/lib/python3.*/site-packages/nfc/clf/pn532.py < pn532.py.patch
 ```
 
+## Klipper Configuration
+nfc2klipper will call the following G-code macros in Klipper:
+- `SET_ACTIVE_FILAMENT ID`
+- `SET_ACTIVE_SPOOL ID`
 
-## Preparing klipper
+There are definitions for them in `klipper-spoolman.cfg`.
 
-When a tag has been read, it will send these gcodes to Klipper:
-
-* `SET_ACTIVE_FILAMENT ID=n1`
-* `SET_ACTIVE_SPOOL ID=n2`
-
-
-See [klipper-spoolman.cfg](klipper-spoolman.cfg) for the klipper
-config for them. Klipper must also have a `[save-variables]` section
-in its config, see
-[Klipper's documentation](https://www.klipper3d.org/Config_Reference.html#save_variables).
+Ensure your Klipper configuration includes the `[save-variables]` section for them to work:
+- [Klipper Save Variables Documentation](https://www.klipper3d.org/Config_Reference.html#save_variables)
 
 
-## Preparing the slicer
+## Slicer Configuration
+I use the following custom start G-code setting for my filaments in the slicers:
+```gcode
+ASSERT_ACTIVE_FILAMENT ID=<filament id>
+```
+It verifies that the right filament is loaded and, if not, pauses the print.
 
-For every filament, add a custom start gcode that calls:
+The slicer configuration can be automated with
+[spoolman2slicer](https://github.com/bofh69/spoolman2slicer).
 
-`ASSERT_ACTIVE_FILAMENT ID=<id>`
+## Tag Preparation
 
-where `<id>` is its filament id in Spoolman.
+nfc2klipper first checks the tags for a custom format with the filament and spool
+ids in it, described below. If not found, the tag's id is used to search for the spool in Spoolman.
 
-This can be done automatically by using [spoolman2slicer](https://github.com/bofh69/spoolman2slicer).
+### Using Tag IDs
+- Add an `nfc_id` field as an "extra" field to the spools in Spoolman.
+- Update the `nfc_id` field with the tag's identifier, which is displayed in the nfc2klipper logs.
 
+This is the same extra field in Spoolman as Filaman uses, so tags written by Filaman should just work.
 
-## Preparing tags
-
-Tags can either contain custom data for nfc2klipper, or the tags'
-id can be used to lookup the spool in Spoolman.
-
-The first method allows the system to work even if spoolman isn't
-working for the moment.
-
-The second method allows nfc2klipper to be used with
-[FilaMan](https://github.com/ManuelW77/Filaman) and with manufacturers'
-tags with different format.
-
-
-### Using tag's id
-
-Add an extra field in Spoolman for the spools called `nfc_id`.
-
-If not already done by FilaMan, the latest read tags' identifier can
-be set in Spoolman via the web server's page, click on the "Set in Spoolman" button.
-
-
-### SPOOL & FILAMENT in tags
-
-The tags should contain an NDEF record with a text block like this:
+### Storing Spool & Filament Data
+Tags should contain an NDEF text record in the following format:
 ```
 SPOOL:3
 FILAMENT:2
 ```
 
-The numbers are the id numbers that will be sent to the macros in
-klipper via the [Moonraker](https://github.com/Arksine/moonraker) API.
+#### Writing Tags
+1. **Web Server**: Enable the experimental web server in `nfc2klipper.py` and access it at `http://<hostname>:5001/`.
+2. **Android App**: Use [Spoolman Companion](https://github.com/V-aruu/SpoolCompanion) to write tags.
+3. **Console Script**: Use the `write_tags.py` script to write data to tags.
 
-#### Write tags with the **experimental** web server
-
-It is possible to enable an **experimental** web server in `nfc2klipper.py`.
-It will then serve a web page for writing to the tags.
-The default address will be `http://mainsailos.local:5001/`,
-where `mainsailos.local` should be replaced with the computer's name (or IP address).
-
-The program uses a development web server with **no security** at all so it
-shouldn't be run if the computer is running on an untrusted network.
-
-The program has a configuration file (`~/.config/nfc2klipper/nfc2klipper.cfg`) for
-enabling the web server, setting the port number, addresses to moonraker
-and mainsail, the webserver's address and NFC device to use.
+Please note that the webserver isn't production ready and should never be used on unsecure networks.
 
 The web page lists the current spools in Spoolman.
 By pressing the "Write" button, its info is written to the nfc/rfid tag.
@@ -172,52 +133,41 @@ By pressing the "Set in Spoolman" button, the tag's id is set for that
 Spool in Spoolman.
 
 
-#### Write with an app
+## Automation
 
-There is an Android app, [Spoolman Companion](https://github.com/V-aruu/SpoolCompanion), for writing
-to the tags.
+### Systemd Setup
+To run `nfc2klipper` as a service:
+1. Copy the service file:
+   ```sh
+   sudo cp nfc2klipper.service /etc/systemd/system/
+   ```
+2. Start and enable the service:
+   ```sh
+   sudo systemctl start nfc2klipper
+   sudo systemctl enable nfc2klipper
+   ```
 
-#### Write with console application
+You can then view its logs with `journeyctl` or `systemctl`.
 
-The `write_tags.py` program fetches Spoolman's spools, shows a simple
-text interface where the spool can be chosen, and when pressing return,
-writes to the tag.
+### Moonraker Upgrades
+Configure Moonraker for automatic upgrades:
+1. Copy `moonraker-nfc2klipper.cfg` to the Moonraker configuration directory.
+2. Include the file in `moonraker.conf`:
+   ```toml
+   [include moonraker-nfc2klipper.cfg]
+   ```
 
-Use the `write_tag` script to stop the nfc2klipper service, run the
-`write_tags.py` program and then start the service again after.
+## Additional Resources
+- [spool2klipper](https://github.com/bofh69/spool2klipper) 
+- [spoolman2slicer](https://github.com/bofh69/spoolman2slicer) 
 
-
-
-## Run automatically with systemd
-
-Copy nfc2klipper.service to `/etc/systemd/system`, then run:
-
+## Developer Guide
+Pull requests are welcome! Before submitting, ensure the code is formatted, linted and has copyright info:
 ```sh
-sudo systemctl start nfc2klipper
-sudo systemctl enable nfc2klipper
+make fmt
+make lint
+make reuse
 ```
 
-To see its status, run:
-```sh
-sudo systemctl status nfc2klipper
-```
-
-## Automatic upgrades with moonraker
-
-Moonraker can be configured to help upgrade nfc2klipper.
-
-Copy the `moonraker-nfc2klipper.cfg` file to the same dir as where
-`moonraker.conf` is. Include the config file by adding:
-```toml
-[include moonraker-nfc2klipper.cfg]
-```
-
-## See also
-If nfc2klipper doesn't work for some reason, [spool2klipper](https://github.com/bofh69/spool2klipper) can be use to automatically update the `active_filament` variable whenever the spool is changed in Moonraker (when changing it in the frontend for example). That way `ASSERT_ACTIVE_FILAMENT` will still work correctly.
-
-## Developer info
-
-Pull requests are happily accepted, but before making one make sure
-the code is formatted correctly and linted without errors.
-
-Format the code by running `make fmt` and lint it with `make lint`.
+## License
+This project is licensed under the [GPL-3.0 License](https://www.gnu.org/licenses/gpl-3.0.html).
