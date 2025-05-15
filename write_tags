@@ -10,7 +10,7 @@ fi
 
 if [ ! -d venv ]; then
   echo "Creating python virtual environment"
-  virtualenv -p python3 venv || rm -r venv
+  python3 -m venv venv || rm -r venv
   echo "Installing python requirements"
   venv/bin/pip3 install -r requirements.txt || exit
 fi

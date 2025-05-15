@@ -38,7 +38,7 @@ Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID 
 
 In the cloned repository's dir run:
 ```sh
-virtualenv venv
+python3 -m venv venv
 venv/bin/pip3 install -r requirements.txt
 ```
 
