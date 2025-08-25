@@ -2,4 +2,4 @@ flask==3.0.3
 toml==0.10.2
 nfcpy==1.0.4
 npyscreen==4.10.5
-requests==2.32.4
+requests==2.32.5
