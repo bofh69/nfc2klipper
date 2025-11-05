@@ -61,7 +61,8 @@ def write_tag(spool, filament):
     response = send_request({"command": "write_tag", "spool": spool, "filament": filament})
     if response.get("status") == "ok":
         return "OK"
-    return (response.get("message", "Failed to write to tag"), 502)
+    # Don't expose internal error details to external users
+    return ("Failed to write to tag", 502)
 
 
 @app.route("/set_nfc_id/<int:spool>")
@@ -72,7 +73,8 @@ def set_nfc_id(spool):
     response = send_request({"command": "set_nfc_id", "spool": spool})
     if response.get("status") == "ok":
         return "OK"
-    return (response.get("message", "Failed to send nfc_id to Spoolman"), 502)
+    # Don't expose internal error details to external users
+    return ("Failed to send nfc_id to Spoolman", 502)
 
 
 @app.route("/")
