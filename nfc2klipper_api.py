@@ -5,29 +5,20 @@
 
 """Web API service for nfc2klipper."""
 
+# pylint: disable=duplicate-code
+
 import json
-import logging
 import os
 import socket
 import sys
 
 from flask import Flask, render_template
-import toml
+from lib.config import Nfc2KlipperConfig
 
-CFG_DIR = "~/.config/nfc2klipper"
-SOCKET_PATH = "/tmp/nfc2klipper.sock"
 
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s %(levelname)s - %(name)s: %(message)s"
-)
+Nfc2KlipperConfig.configure_logging()
 
-args = None  # pylint: disable=C0103
-for path in ["~/nfc2klipper.cfg", CFG_DIR + "/nfc2klipper.cfg"]:
-    cfg_filename = os.path.expanduser(path)
-    if os.path.exists(cfg_filename):
-        with open(cfg_filename, "r", encoding="utf-8") as fp:
-            args = toml.load(fp)
-            break
+args = Nfc2KlipperConfig.get_config()
 
 if not args:
     print(
@@ -36,6 +27,12 @@ if not args:
     )
     sys.exit(1)
 
+# Get socket path from config, with fallback to default
+socket_path = args.get("webserver", {}).get(
+    "socket_path", Nfc2KlipperConfig.DEFAULT_SOCKET_PATH
+)
+socket_path = os.path.expanduser(socket_path)
+
 app = Flask(__name__)
 
 
@@ -43,7 +40,7 @@ def send_request(request_data):
     """Send a request to the backend via Unix domain socket"""
     try:
         client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client.connect(SOCKET_PATH)
+        client.connect(socket_path)
         client.sendall(json.dumps(request_data).encode("utf-8"))
         response = client.recv(65536).decode("utf-8")
         client.close()
@@ -58,10 +55,12 @@ def write_tag(spool, filament):
     """
     The web-api to write the spool & filament data to NFC/RFID tag
     """
-    response = send_request({"command": "write_tag", "spool": spool, "filament": filament})
+    response = send_request(
+        {"command": "write_tag", "spool": spool, "filament": filament}
+    )
     if response.get("status") == "ok":
         return "OK"
-    # Don't expose internal error details to external users
+
     return ("Failed to write to tag", 502)
 
 
@@ -73,7 +72,7 @@ def set_nfc_id(spool):
     response = send_request({"command": "set_nfc_id", "spool": spool})
     if response.get("status") == "ok":
         return "OK"
-    # Don't expose internal error details to external users
+
     return ("Failed to send nfc_id to Spoolman", 502)
 
 
@@ -85,9 +84,30 @@ def index():
     spools_response = send_request({"command": "get_spools"})
     state_response = send_request({"command": "get_state"})
 
-    spools = spools_response.get("spools", []) if spools_response.get("status") == "ok" else []
-    nfc_id = state_response.get("nfc_id") if state_response.get("status") == "ok" else None
-    spool_id = state_response.get("spool_id") if state_response.get("status") == "ok" else None
+    if spools_response.get("status") != "ok":
+        return (
+            "Got error fetching spool data from Spoolman via backend: "
+            + spools_response.get("message"),
+            502,
+        )
+    if state_response.get("status") != "ok":
+        return (
+            "Got error fetching spool state from backend: "
+            + state_response.get("message"),
+            502,
+        )
+
+    spools = (
+        spools_response.get("spools", [])
+        if spools_response.get("status") == "ok"
+        else []
+    )
+    nfc_id = (
+        state_response.get("nfc_id") if state_response.get("status") == "ok" else None
+    )
+    spool_id = (
+        state_response.get("spool_id") if state_response.get("status") == "ok" else None
+    )
 
     if spool_id:
         spool_id = int(spool_id)
@@ -98,6 +118,4 @@ def index():
 
 if __name__ == "__main__":
     app.logger.info("Starting web server")
-    app.run(
-        args["webserver"]["web_address"], port=args["webserver"]["web_port"]
-    )
+    app.run(args["webserver"]["web_address"], port=args["webserver"]["web_port"])
