@@ -1,0 +1,18 @@
+#Systemd NFC to Klipper Service
+
+[Unit]
+Description=Starts nfc2klipper Web API
+Documentation=https://github.com/bofh69/nfc2klipper
+After=nfc2klipper_backend.service
+Wants=udev.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+User=pi
+RemainAfterExit=yes
+ExecStart= /home/pi/nfc2klipper/venv/bin/gunicorn --bind localhost:5001 --chdir /home/pi/nfc2klipper nfc2klipper_api:app
+Restart=always
+RestartSec=10
