@@ -8,7 +8,15 @@ SPDX-PackageSupplier = "Sebastian Andersson <sebastian@bittr.nu>"
 SPDX-PackageDownloadLocation = "https://github.com/bofh69/nfc2klipper"
 
 [[annotations]]
-path = [".github/**", "requirements.txt", ".gitignore", "nfc2klipper.service", "nfc2klipper.cfg", "moonraker-nfc2klipper.cfg", "pn532.py.patch"]
+path = [ ".github/**",
+  "requirements.txt",
+  ".gitignore",
+  "nfc2klipper.service",
+  "nfc2klipper_api.service",
+  "nfc2klipper_backend.service",
+  "nfc2klipper.cfg",
+  "moonraker-nfc2klipper.cfg",
+  "pn532.py.patch"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "$YEAR $NAME <$CONTACT>"
 SPDX-License-Identifier = "CC0-1.0"
