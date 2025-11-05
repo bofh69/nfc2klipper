@@ -8,7 +8,7 @@
 import logging
 import os
 import sys
-import subprocess
+import subprocess  # nosec
 import time
 
 from lib.config import Nfc2KlipperConfig
@@ -23,7 +23,7 @@ if not args:
     # Run the backend to handle initial config setup
     script_dir = os.path.dirname(os.path.abspath(__file__))
     backend_script = os.path.join(script_dir, "nfc2klipper_backend.py")
-    subprocess.run([sys.executable, backend_script], check=False)
+    subprocess.run([sys.executable, backend_script], check=False)  # nosec
     sys.exit(1)
 
 if __name__ == "__main__":
@@ -34,13 +34,17 @@ if __name__ == "__main__":
     if not args["webserver"].get("disable_web_server"):
         # Start backend in a separate process
         logger.info("Starting backend service")
-        with subprocess.Popen([sys.executable, backend_script]) as backend_process:
+        with subprocess.Popen(
+            [sys.executable, backend_script]
+        ) as backend_process:  # nosec
             # Wait a moment for the backend to start
             time.sleep(2)
 
             logger.info("Starting web API service")
             try:
-                with subprocess.Popen([sys.executable, api_script]) as api_process:
+                with subprocess.Popen(
+                    [sys.executable, api_script]
+                ) as api_process:  # nosec
                     # Wait for both processes to end
                     backend_process.wait()
                     api_process.wait()
@@ -48,4 +52,4 @@ if __name__ == "__main__":
                 logger.info("Shutting down...")
     else:
         # Just run the backend
-        subprocess.run([sys.executable, backend_script], check=True)
+        subprocess.run([sys.executable, backend_script], check=True)  # nosec
