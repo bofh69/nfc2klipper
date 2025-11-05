@@ -21,8 +21,9 @@ from lib.nfc_handler import NfcHandler
 from lib.spoolman_client import SpoolmanClient
 
 CFG_DIR = "~/.config/nfc2klipper"
-SOCKET_PATH = "/tmp/nfc2klipper.sock"
+DEFAULT_SOCKET_PATH = "/home/pi/nfc2klipper/nfc2klipper.sock"
 
+# pylint: disable=duplicate-code
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s %(levelname)s - %(name)s: %(message)s"
 )
@@ -51,6 +52,10 @@ if not args:
     shutil.copyfile(from_filename, to_filename)
     print(f"Created {to_filename}, please update it", file=sys.stderr)
     sys.exit(1)
+
+# Get socket path from config, with fallback to default
+socket_path = args.get("webserver", {}).get("socket_path", DEFAULT_SOCKET_PATH)
+socket_path = os.path.expanduser(socket_path)
 
 spoolman = SpoolmanClient(args["spoolman"]["spoolman-url"])
 moonraker = MoonrakerWebClient(args["moonraker"]["moonraker-url"])
@@ -145,6 +150,7 @@ def on_nfc_no_tag_present():
         set_spool_and_filament(0, 0)
 
 
+# pylint: disable=too-many-return-statements
 def handle_client_request(request_data):
     """Handle a request from the web API"""
     try:
@@ -172,19 +178,18 @@ def handle_client_request(request_data):
 
             return {"status": "error", "message": "Failed to send nfc_id to Spoolman"}
 
-        elif command == "get_spools":
+        if command == "get_spools":
             spools = spoolman.get_spools()
             return {"status": "ok", "spools": spools}
 
-        elif command == "get_state":
+        if command == "get_state":
             return {
                 "status": "ok",
                 "nfc_id": last_nfc_id,
                 "spool_id": last_spool_id,
             }
 
-        else:
-            return {"status": "error", "message": f"Unknown command: {command}"}
+        return {"status": "error", "message": f"Unknown command: {command}"}
 
     except Exception as ex:  # pylint: disable=W0718
         logger.exception("Error handling request: %s", ex)
@@ -193,14 +198,63 @@ def handle_client_request(request_data):
 
 def run_socket_server():
     """Run the Unix domain socket server"""
-    # Remove socket file if it exists
-    if os.path.exists(SOCKET_PATH):
-        os.unlink(SOCKET_PATH)
+    # Ensure the directory for the socket exists
+    socket_dir = os.path.dirname(socket_path)
+    if socket_dir and not os.path.exists(socket_dir):
+        try:
+            os.makedirs(socket_dir, exist_ok=True)
+            logger.info("Created socket directory: %s", socket_dir)
+        except OSError as ex:
+            logger.error(
+                "ERROR: Failed to create directory for socket: %s\n"
+                "  Directory: %s\n"
+                "  Error: %s\n"
+                "  Fix: Ensure the parent directory exists and you have write permissions.\n"
+                "       You can also change the socket_path in the config file "
+                "[webserver] section.",
+                socket_path,
+                socket_dir,
+                ex,
+            )
+            sys.exit(1)
 
-    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    server.bind(SOCKET_PATH)
-    server.listen(5)
-    logger.info("Socket server listening on %s", SOCKET_PATH)
+    # Remove socket file if it exists
+    if os.path.exists(socket_path):
+        try:
+            os.unlink(socket_path)
+        except OSError as ex:
+            logger.error(
+                "ERROR: Failed to remove existing socket file: %s\n"
+                "  Socket: %s\n"
+                "  Error: %s\n"
+                "  Fix: Ensure you have write permissions or manually remove the file.\n"
+                "       You can also change the socket_path in the config file "
+                "[webserver] section.",
+                socket_path,
+                socket_path,
+                ex,
+            )
+            sys.exit(1)
+
+    try:
+        server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        server.bind(socket_path)
+        server.listen(5)
+        logger.info("Socket server listening on %s", socket_path)
+    except OSError as ex:
+        logger.error(
+            "ERROR: Failed to create socket: %s\n"
+            "  Socket: %s\n"
+            "  Error: %s\n"
+            "  Fix: Ensure the directory exists and you have write permissions.\n"
+            "       Check if another process is using this socket path.\n"
+            "       You can also change the socket_path in the config file "
+            "[webserver] section.",
+            socket_path,
+            socket_path,
+            ex,
+        )
+        sys.exit(1)
 
     while True:
         try:
