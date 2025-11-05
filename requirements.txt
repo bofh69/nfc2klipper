@@ -3,3 +3,4 @@ toml==0.10.2
 nfcpy==1.0.4
 npyscreen==4.10.5
 requests==2.32.4
+Gunicorn==23.0.0
