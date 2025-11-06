@@ -86,15 +86,19 @@ def index() -> Union[str, Tuple[str, int]]:
     state_response: Dict[str, Any] = send_request({"command": "get_state"})
 
     if spools_response.get("status") != "ok":
+        error_msg = spools_response.get("message", "Unknown error")
+        app.logger.error("Spoolman error: %s", error_msg)
         return (
             "Got error fetching spool data from Spoolman via backend: "
-            + str(spools_response.get("message", "Unknown error")),
+            + str(error_msg),
             502,
         )
     if state_response.get("status") != "ok":
+        error_msg = state_response.get("message", "Unknown error")
+        app.logger.error("Backend state error: %s", error_msg)
         return (
             "Got error fetching spool state from backend: "
-            + str(state_response.get("message", "Unknown error")),
+            + str(error_msg),
             502,
         )
 

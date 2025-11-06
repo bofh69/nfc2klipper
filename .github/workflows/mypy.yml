@@ -2,6 +2,9 @@ name: Mypy Type Check
 
 on: [push]
 
+permissions:
+  contents: read
+
 jobs:
   typecheck:
     runs-on: ubuntu-latest
