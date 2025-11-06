@@ -7,6 +7,7 @@
 
 import logging
 import os
+import signal
 import sys
 import subprocess  # nosec
 import time
@@ -31,25 +32,55 @@ if __name__ == "__main__":
     backend_script = os.path.join(script_dir, "nfc2klipper_backend.py")
     api_script = os.path.join(script_dir, "nfc2klipper_api.py")
 
+    backend_process = None
+    api_process = None
+
+    def cleanup_processes(signum, frame):  # pylint: disable=W0613
+        """Clean up subprocesses on signal"""
+        logger.info("Received signal %s, shutting down...", signum)
+        if api_process:
+            logger.info("Terminating API process")
+            api_process.terminate()
+            try:
+                api_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                logger.warning("API process did not terminate, killing it")
+                api_process.kill()
+        if backend_process:
+            logger.info("Terminating backend process")
+            backend_process.terminate()
+            try:
+                backend_process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                logger.warning("Backend process did not terminate, killing it")
+                backend_process.kill()
+        sys.exit(0)
+
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, cleanup_processes)
+    signal.signal(signal.SIGTERM, cleanup_processes)
+
     if not args["webserver"].get("disable_web_server"):
         # Start backend in a separate process
         logger.info("Starting backend service")
-        with subprocess.Popen(
+        backend_process = subprocess.Popen(  # pylint: disable=R1732
             [sys.executable, backend_script]
-        ) as backend_process:  # nosec
-            # Wait a moment for the backend to start
-            time.sleep(2)
+        )  # nosec
 
-            logger.info("Starting web API service")
-            try:
-                with subprocess.Popen(
-                    [sys.executable, api_script]
-                ) as api_process:  # nosec
-                    # Wait for both processes to end
-                    backend_process.wait()
-                    api_process.wait()
-            except KeyboardInterrupt:
-                logger.info("Shutting down...")
+        # Wait a moment for the backend to start
+        time.sleep(2)
+
+        logger.info("Starting web API service")
+        try:
+            api_process = subprocess.Popen(  # pylint: disable=R1732
+                [sys.executable, api_script]
+            )  # nosec
+
+            # Wait for both processes to end
+            backend_process.wait()
+            api_process.wait()
+        except KeyboardInterrupt:
+            cleanup_processes(signal.SIGINT, None)
     else:
         # Just run the backend
         subprocess.run([sys.executable, backend_script], check=True)  # nosec

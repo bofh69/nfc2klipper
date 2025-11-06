@@ -8,6 +8,7 @@
 import json
 import logging
 import os
+import signal
 import socket
 import sys
 import shutil
@@ -270,6 +271,22 @@ def run_socket_server():
 
 if __name__ == "__main__":
 
+    def signal_handler(signum, frame):  # pylint: disable=W0613
+        """Handle termination signals"""
+        logger.info("Received signal %s, shutting down...", signum)
+        nfc_handler.stop()
+        # Clean up socket file
+        if os.path.exists(socket_path):
+            try:
+                os.unlink(socket_path)
+            except OSError:
+                pass
+        sys.exit(0)
+
+    # Register signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     if should_clear_spool():
         # Start by unsetting current spool & filament:
         set_spool_and_filament(0, 0)
@@ -285,6 +302,5 @@ if __name__ == "__main__":
     logger.info("Starting nfc-handler")
     try:
         nfc_handler.run()
-    except KeyboardInterrupt:
-        logger.info("Shutting down...")
-        nfc_handler.stop()
+    except (KeyboardInterrupt, SystemExit):
+        signal_handler(signal.SIGINT, None)
