@@ -82,6 +82,7 @@ last_spool_id: Optional[str] = None  # pylint: disable=C0103
 def should_always_send() -> bool:
     """Should SET_ACTIVE_* macros always be called when tag is read,
     or only when different?"""
+    assert args is not None
     always_send: Optional[bool] = args["moonraker"].get("always-send")
 
     if always_send is None:
@@ -93,13 +94,13 @@ def should_always_send() -> bool:
 def set_spool_and_filament(spool: int, filament: int) -> None:
     """Calls moonraker with the current spool & filament"""
 
-    if "old_spool" not in set_spool_and_filament.__dict__:
-        set_spool_and_filament.old_spool = None
-        set_spool_and_filament.old_filament = None
+    if "old_spool" not in set_spool_and_filament.__dict__:  # type: ignore[attr-defined]
+        set_spool_and_filament.old_spool = None  # type: ignore[attr-defined]
+        set_spool_and_filament.old_filament = None  # type: ignore[attr-defined]
 
     if not should_always_send() and (
-        set_spool_and_filament.old_spool == spool
-        and set_spool_and_filament.old_filament == filament
+        set_spool_and_filament.old_spool == spool  # type: ignore[attr-defined]
+        and set_spool_and_filament.old_filament == filament  # type: ignore[attr-defined]
     ):
         logger.info("Read same spool & filament")
         return
@@ -108,8 +109,8 @@ def set_spool_and_filament(spool: int, filament: int) -> None:
 
     # In case the post fails, we might not know if the server has received
     # it or not, so set them to None:
-    set_spool_and_filament.old_spool = None
-    set_spool_and_filament.old_filament = None
+    set_spool_and_filament.old_spool = None  # type: ignore[attr-defined]
+    set_spool_and_filament.old_filament = None  # type: ignore[attr-defined]
 
     try:
         moonraker.set_spool_and_filament(spool, filament)
@@ -117,12 +118,13 @@ def set_spool_and_filament(spool: int, filament: int) -> None:
         logger.error(ex)
         return
 
-    set_spool_and_filament.old_spool = spool
-    set_spool_and_filament.old_filament = filament
+    set_spool_and_filament.old_spool = spool  # type: ignore[attr-defined]
+    set_spool_and_filament.old_filament = filament  # type: ignore[attr-defined]
 
 
 def should_clear_spool() -> bool:
     """Returns True if the config says the spool should be cleared"""
+    assert args is not None
     if args["moonraker"].get("clear_spool"):
         return True
     return False
@@ -142,20 +144,23 @@ def on_nfc_tag_present(spool: Optional[str], filament: Optional[str], identifier
         logger.debug("Fetching data from spoolman from tags' id: %s", identifier)
         spool_data = spoolman.get_spool_from_nfc_id(identifier)
         if spool_data:
-            spool = spool_data.get("id")
+            spool_int = spool_data.get("id")
+            filament_int = None
             if "filament" in spool_data:
-                filament = spool_data["filament"].get("id")
+                filament_int = spool_data["filament"].get("id")
         else:
             logger.info(
                 "Did not find spool records in tag nor from its id (%s) in spoolman",
                 identifier,
             )
-    if spool and filament:
-        if not spool:
-            spool = 0
-        if not filament:
-            filament = 0
-        set_spool_and_filament(spool, filament)
+            return
+    else:
+        # Convert string to int if needed
+        spool_int = int(spool) if spool else 0
+        filament_int = int(filament) if filament else 0
+
+    if spool_int is not None and filament_int is not None:
+        set_spool_and_filament(spool_int, filament_int)
 
 
 def on_nfc_no_tag_present() -> None:
@@ -167,8 +172,8 @@ def on_nfc_no_tag_present() -> None:
 @request_handler("write_tag")
 def handle_write_tag(request: Dict[str, Any]) -> Dict[str, Any]:
     """Handle write_tag command"""
-    spool = request.get("spool")
-    filament = request.get("filament")
+    spool: int = request.get("spool", 0)
+    filament: int = request.get("filament", 0)
     logger.info("  write spool=%s, filament=%s", spool, filament)
     if nfc_handler.write_to_tag(spool, filament):
         return {"status": "ok"}
@@ -179,7 +184,7 @@ def handle_write_tag(request: Dict[str, Any]) -> Dict[str, Any]:
 def handle_set_nfc_id(request: Dict[str, Any]) -> Dict[str, Any]:
     """Handle set_nfc_id command"""
     global last_nfc_id  # pylint: disable=W0602,W0603
-    spool = request.get("spool")
+    spool: int = request.get("spool", 0)
     logger.info("Set nfc_id=%s to spool=%s in Spoolman", last_nfc_id, spool)
 
     if last_nfc_id is None:

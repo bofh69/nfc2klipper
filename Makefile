@@ -10,6 +10,7 @@ PIP:=$(VENV)/bin/pip3
 BLACK:=$(VENV)/bin/black
 PYLINT:=$(VENV)/bin/pylint
 REUSE:=$(VENV)/bin/reuse
+MYPY:=$(VENV)/bin/mypy
 
 SRC=$(wildcard *.py lib/*.py)
 
@@ -17,6 +18,7 @@ help:
 	@echo Available targets:
 	@echo fmt - formats the python files.
 	@echo lint - check the python files with pylint.
+	@echo typecheck - check type annotations with mypy.
 	@echo clean - remove venv directory.
 
 $(VENV_TIMESTAMP): requirements.txt
@@ -34,11 +36,17 @@ $(PYLINT): $(VENV_TIMESTAMP)
 $(REUSE): $(VENV_TIMESTAMP)
 	$(PIP) install reuse
 
+$(MYPY): $(VENV_TIMESTAMP)
+	$(PIP) install mypy types-toml types-requests
+
 fmt: $(BLACK)
 	$(BLACK) $(SRC)
 
 lint: $(PYLINT)
 	$(PYLINT) $(SRC)
+
+typecheck: $(MYPY)
+	$(MYPY) $(SRC)
 
 reuse: $(REUSE)
 	$(REUSE) lint
@@ -46,4 +54,4 @@ reuse: $(REUSE)
 clean:
 	@rm -rf $(VENV) 2>/dev/null
 
-.PHONY: clean fmt lint reuse
+.PHONY: clean fmt lint typecheck reuse

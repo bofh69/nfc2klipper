@@ -11,7 +11,7 @@ import json
 import os
 import socket
 import sys
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from flask import Flask, render_template
 from lib.config import Nfc2KlipperConfig
@@ -19,7 +19,7 @@ from lib.config import Nfc2KlipperConfig
 
 Nfc2KlipperConfig.configure_logging()
 
-args: Dict[str, Any] = Nfc2KlipperConfig.get_config()
+args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config()
 
 if not args:
     print(
@@ -88,13 +88,13 @@ def index() -> Union[str, Tuple[str, int]]:
     if spools_response.get("status") != "ok":
         return (
             "Got error fetching spool data from Spoolman via backend: "
-            + spools_response.get("message"),
+            + str(spools_response.get("message", "Unknown error")),
             502,
         )
     if state_response.get("status") != "ok":
         return (
             "Got error fetching spool state from backend: "
-            + state_response.get("message"),
+            + str(state_response.get("message", "Unknown error")),
             502,
         )
 
@@ -103,15 +103,13 @@ def index() -> Union[str, Tuple[str, int]]:
         if spools_response.get("status") == "ok"
         else []
     )
-    nfc_id: str = (
+    nfc_id: Optional[str] = (
         state_response.get("nfc_id") if state_response.get("status") == "ok" else None
     )
-    spool_id: int = (
+    spool_id: Optional[int] = (
         state_response.get("spool_id") if state_response.get("status") == "ok" else None
     )
 
-    if spool_id:
-        spool_id = int(spool_id)
     return render_template(
         "index.html", spools=spools, nfc_id=nfc_id, spool_id=spool_id
     )

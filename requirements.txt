@@ -4,3 +4,6 @@ nfcpy==1.0.4
 npyscreen==4.10.5
 requests==2.32.4
 Gunicorn==23.0.0
+mypy==1.13.0
+types-toml==0.10.8.20240310
+types-requests==2.32.0.20241016

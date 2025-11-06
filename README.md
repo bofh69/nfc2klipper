@@ -262,4 +262,6 @@ the code is formatted correctly and linted without errors.
 
 Format the code by running `make fmt` and lint it with `make lint`.
 
-Add copyright info in SPDX format and check that it is correct with `make reuse`.
+Python types are used. Check them with `make typecheck`
+
+Add copyright info in SPDX format in new files and check that it is correct with `make reuse`.
