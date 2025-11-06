@@ -5,37 +5,21 @@
 
 """Backend service for NFC handling and communication with Moonraker/Spoolman."""
 
-import inspect
-import json
 import logging
 import os
 import signal
-import socket
 import sys
 import shutil
 import threading
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import toml
 
+from lib.ipc import IPCServer
 from lib.moonraker_web_client import MoonrakerWebClient
 from lib.nfc_handler import NfcHandler
 from lib.spoolman_client import SpoolmanClient
-
-
-# Request handler registry
-_request_handlers: Dict[str, Callable[..., Dict[str, Any]]] = {}
-
-
-def request_handler(command_name: str) -> Callable:
-    """Decorator to register a request handler for a specific command"""
-
-    def decorator(func: Callable[..., Dict[str, Any]]) -> Callable:
-        _request_handlers[command_name] = func
-        return func
-
-    return decorator
 
 
 CFG_DIR: str = "~/.config/nfc2klipper"
@@ -106,6 +90,9 @@ else:
 
 last_nfc_id: Optional[str] = None  # pylint: disable=C0103
 last_spool_id: Optional[str] = None  # pylint: disable=C0103
+
+# Create IPC server instance
+ipc_server: IPCServer = IPCServer(socket_path)
 
 
 def should_always_send() -> bool:
@@ -200,7 +187,7 @@ def on_nfc_no_tag_present() -> None:
         set_spool_and_filament(0, 0)
 
 
-@request_handler("write_tag")
+@ipc_server.register_handler("write_tag")
 def handle_write_tag(spool: int, filament: int) -> Dict[str, Any]:
     """Handle write_tag command"""
     logger.info("  write spool=%s, filament=%s", spool, filament)
@@ -209,7 +196,7 @@ def handle_write_tag(spool: int, filament: int) -> Dict[str, Any]:
     return {"status": "error", "message": "Failed to write to tag"}
 
 
-@request_handler("set_nfc_id")
+@ipc_server.register_handler("set_nfc_id")
 def handle_set_nfc_id(spool: int) -> Dict[str, Any]:
     """Handle set_nfc_id command"""
     global last_nfc_id  # pylint: disable=W0602,W0603
@@ -224,14 +211,14 @@ def handle_set_nfc_id(spool: int) -> Dict[str, Any]:
     return {"status": "error", "message": "Failed to send nfc_id to Spoolman"}
 
 
-@request_handler("get_spools")
+@ipc_server.register_handler("get_spools")
 def handle_get_spools() -> Dict[str, Any]:
     """Handle get_spools command"""
     spools = spoolman.get_spools()
     return {"status": "ok", "spools": spools}
 
 
-@request_handler("get_state")
+@ipc_server.register_handler("get_state")
 def handle_get_state() -> Dict[str, Any]:
     """Handle get_state command"""
     return {
@@ -240,102 +227,6 @@ def handle_get_state() -> Dict[str, Any]:
         "spool_id": last_spool_id,
     }
 
-
-def handle_client_request(request_data: str) -> Dict[str, Any]:
-    """Handle a request from the web API"""
-    try:
-        request = json.loads(request_data)
-        command = request.get("command")
-
-        # Look up the handler for this command
-        if command in _request_handlers:
-            handler = _request_handlers[command]
-            # Extract arguments based on handler function signature
-            sig = inspect.signature(handler)
-            kwargs = {}
-            for param_name in sig.parameters:
-                if param_name in request:
-                    kwargs[param_name] = request[param_name]
-            return handler(**kwargs)
-
-        return {"status": "error", "message": f"Unknown command: {command}"}
-
-    except Exception as ex:  # pylint: disable=W0718
-        logger.exception("Error handling request: %s", ex)
-        return {"status": "error", "message": str(ex)}
-
-
-def run_socket_server() -> None:
-    """Run the Unix domain socket server"""
-    # Ensure the directory for the socket exists
-    socket_dir: str = os.path.dirname(socket_path)
-    if socket_dir and not os.path.exists(socket_dir):
-        try:
-            os.makedirs(socket_dir, exist_ok=True)
-            logger.info("Created socket directory: %s", socket_dir)
-        except OSError as ex:
-            logger.error(
-                "ERROR: Failed to create directory for socket: %s\n"
-                "  Directory: %s\n"
-                "  Error: %s\n"
-                "  Fix: Ensure the parent directory exists and you have write permissions.\n"
-                "       You can also change the socket_path in the config file "
-                "[webserver] section.",
-                socket_path,
-                socket_dir,
-                ex,
-            )
-            sys.exit(1)
-
-    # Remove socket file if it exists
-    if os.path.exists(socket_path):
-        try:
-            os.unlink(socket_path)
-        except OSError as ex:
-            logger.error(
-                "ERROR: Failed to remove existing socket file: %s\n"
-                "  Socket: %s\n"
-                "  Error: %s\n"
-                "  Fix: Ensure you have write permissions or manually remove the file.\n"
-                "       You can also change the socket_path in the config file "
-                "[webserver] section.",
-                socket_path,
-                socket_path,
-                ex,
-            )
-            sys.exit(1)
-
-    try:
-        server: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        server.bind(socket_path)
-        server.listen(5)
-        logger.info("Socket server listening on %s", socket_path)
-    except OSError as ex:
-        logger.error(
-            "ERROR: Failed to create socket: %s\n"
-            "  Socket: %s\n"
-            "  Error: %s\n"
-            "  Fix: Ensure the directory exists and you have write permissions.\n"
-            "       Check if another process is using this socket path.\n"
-            "       You can also change the socket_path in the config file "
-            "[webserver] section.",
-            socket_path,
-            socket_path,
-            ex,
-        )
-        sys.exit(1)
-
-    while True:
-        try:
-            conn: socket.socket
-            conn, _ = server.accept()
-            data: str = conn.recv(65536).decode("utf-8")
-            if data:
-                response: Dict[str, Any] = handle_client_request(data)
-                conn.sendall(json.dumps(response).encode("utf-8"))
-            conn.close()
-        except Exception as ex:  # pylint: disable=W0718
-            logger.exception("Error in socket server: %s", ex)
 
 
 if __name__ == "__main__":
@@ -364,7 +255,7 @@ if __name__ == "__main__":
     nfc_handler.set_tag_present_callback(on_nfc_tag_present)
 
     logger.info("Starting socket server")
-    socket_thread = threading.Thread(target=run_socket_server)
+    socket_thread = threading.Thread(target=ipc_server.start)
     socket_thread.daemon = True
     socket_thread.start()
 

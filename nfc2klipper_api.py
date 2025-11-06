@@ -7,14 +7,13 @@
 
 # pylint: disable=duplicate-code
 
-import json
 import os
-import socket
 import sys
 from typing import Any, Dict, Optional, Tuple, Union
 
 from flask import Flask, render_template
 from lib.config import Nfc2KlipperConfig
+from lib.ipc import IPCClient
 
 
 Nfc2KlipperConfig.configure_logging()
@@ -34,21 +33,10 @@ socket_path: str = args.get("webserver", {}).get(
 )
 socket_path = os.path.expanduser(socket_path)
 
+# Create IPC client
+ipc_client: IPCClient = IPCClient(socket_path)
+
 app: Flask = Flask(__name__)
-
-
-def send_request(request_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Send a request to the backend via Unix domain socket"""
-    try:
-        client: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client.connect(socket_path)
-        client.sendall(json.dumps(request_data).encode("utf-8"))
-        response: str = client.recv(65536).decode("utf-8")
-        client.close()
-        return json.loads(response)
-    except Exception as ex:  # pylint: disable=W0718
-        app.logger.error("Error communicating with backend: %s", ex)
-        return {"status": "error", "message": str(ex)}
 
 
 @app.route("/w/<int:spool>/<int:filament>")
@@ -56,7 +44,7 @@ def write_tag(spool: int, filament: int) -> Union[str, Tuple[str, int]]:
     """
     The web-api to write the spool & filament data to NFC/RFID tag
     """
-    response: Dict[str, Any] = send_request(
+    response: Dict[str, Any] = ipc_client.send_request(
         {"command": "write_tag", "spool": spool, "filament": filament}
     )
     if response.get("status") == "ok":
@@ -70,7 +58,9 @@ def set_nfc_id(spool: int) -> Union[str, Tuple[str, int]]:
     """
     The web-api to write the current nfc_id to spool's nfc_id field in Spoolman
     """
-    response: Dict[str, Any] = send_request({"command": "set_nfc_id", "spool": spool})
+    response: Dict[str, Any] = ipc_client.send_request(
+        {"command": "set_nfc_id", "spool": spool}
+    )
     if response.get("status") == "ok":
         return "OK"
 
@@ -82,8 +72,8 @@ def index() -> Union[str, Tuple[str, int]]:
     """
     Returns the main index page.
     """
-    spools_response: Dict[str, Any] = send_request({"command": "get_spools"})
-    state_response: Dict[str, Any] = send_request({"command": "get_state"})
+    spools_response: Dict[str, Any] = ipc_client.send_request({"command": "get_spools"})
+    state_response: Dict[str, Any] = ipc_client.send_request({"command": "get_state"})
 
     if spools_response.get("status") != "ok":
         error_msg = spools_response.get("message", "Unknown error")
