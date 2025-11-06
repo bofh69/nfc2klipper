@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# SPDX-FileCopyrightText: 2024 Sebastian Andersson <sebastian@bittr.nu>
+# SPDX-FileCopyrightText: 2024-2025 Sebastian Andersson <sebastian@bittr.nu>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Backend service for NFC handling and communication with Moonraker/Spoolman."""
