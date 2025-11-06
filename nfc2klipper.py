@@ -23,14 +23,17 @@ args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config()
 
 if not args:
     # Run the backend to handle initial config setup
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    backend_script = os.path.join(script_dir, "nfc2klipper_backend.py")
-    subprocess.run([sys.executable, backend_script], check=False)  # nosec
+    script_dir: str = os.path.dirname(os.path.abspath(__file__))
+    backend_script: str = os.path.join(script_dir, "nfc2klipper_backend.py")
+    try:
+        subprocess.run([sys.executable, backend_script], check=True)  # nosec
+    except subprocess.CalledProcessError:
+        pass  # Backend already logged the error
     sys.exit(1)
 
 if __name__ == "__main__":
-    script_dir: str = os.path.dirname(os.path.abspath(__file__))
-    backend_script: str = os.path.join(script_dir, "nfc2klipper_backend.py")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    backend_script = os.path.join(script_dir, "nfc2klipper_backend.py")
     api_script: str = os.path.join(script_dir, "nfc2klipper_api.py")
 
     backend_process: Optional[subprocess.Popen] = None

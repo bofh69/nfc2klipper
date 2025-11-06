@@ -161,7 +161,7 @@ class NfcHandler:
         """Check if the tag should be written to and do it"""
         did_write: bool = False
         if self.write_lock.acquire():  # pylint: disable=R1732
-            if self.write_spool:
+            if self.write_spool is not None and self.write_filament is not None:
                 if self._write_to_nfc_tag(tag, self.write_spool, self.write_filament):
                     self.write_event.set()
                     did_write = True

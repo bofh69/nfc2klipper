@@ -52,7 +52,7 @@ class SpoolmanClient:
         """Clear the nfc_id field for the given spool"""
         spool: Dict[str, Any] = self.get_spool(spool_id)
 
-        extra: Dict[str, Any] = spool.get("extra")
+        extra: Optional[Dict[str, Any]] = spool.get("extra")
         if not extra:
             extra = {}
         extra["nfc_id"] = '""'
@@ -74,9 +74,9 @@ class SpoolmanClient:
             self.clear_nfc_id_for_spool(spool["id"])
 
         nfc_id = f'"{nfc_id.lower()}"'
-        spool = self.get_spool(spool_id)
+        spool_dict: Dict[str, Any] = self.get_spool(spool_id)
 
-        extra: Dict[str, Any] = spool.get("extra")
+        extra: Optional[Dict[str, Any]] = spool_dict.get("extra")
         if not extra:
             extra = {}
         extra["nfc_id"] = nfc_id
