@@ -14,7 +14,7 @@ import sys
 import shutil
 import threading
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 import toml
 
@@ -34,18 +34,18 @@ def request_handler(command_name: str) -> Callable:
         return func
     return decorator
 
-CFG_DIR = "~/.config/nfc2klipper"
-DEFAULT_SOCKET_PATH = "/home/pi/nfc2klipper/nfc2klipper.sock"
+CFG_DIR: str = "~/.config/nfc2klipper"
+DEFAULT_SOCKET_PATH: str = "/home/pi/nfc2klipper/nfc2klipper.sock"
 
 # pylint: disable=duplicate-code
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s %(levelname)s - %(name)s: %(message)s"
 )
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
-args = None  # pylint: disable=C0103
+args: Optional[Dict[str, Any]] = None  # pylint: disable=C0103
 for path in ["~/nfc2klipper.cfg", CFG_DIR + "/nfc2klipper.cfg"]:
-    cfg_filename = os.path.expanduser(path)
+    cfg_filename: str = os.path.expanduser(path)
     if os.path.exists(cfg_filename):
         with open(cfg_filename, "r", encoding="utf-8") as fp:
             args = toml.load(fp)
@@ -56,33 +56,33 @@ if not args:
         "WARNING: The config file is missing, installing a default version.",
         file=sys.stderr,
     )
-    cfg_dir = os.path.expanduser(CFG_DIR)
+    cfg_dir: str = os.path.expanduser(CFG_DIR)
     if not os.path.exists(cfg_dir):
         print(f"Creating dir {cfg_dir}", file=sys.stderr)
         Path(cfg_dir).mkdir(parents=True, exist_ok=True)
-    script_dir = os.path.dirname(__file__)
-    from_filename = os.path.join(script_dir, "nfc2klipper.cfg")
-    to_filename = os.path.join(cfg_dir, "nfc2klipper.cfg")
+    script_dir: str = os.path.dirname(__file__)
+    from_filename: str = os.path.join(script_dir, "nfc2klipper.cfg")
+    to_filename: str = os.path.join(cfg_dir, "nfc2klipper.cfg")
     shutil.copyfile(from_filename, to_filename)
     print(f"Created {to_filename}, please update it", file=sys.stderr)
     sys.exit(1)
 
 # Get socket path from config, with fallback to default
-socket_path = args.get("webserver", {}).get("socket_path", DEFAULT_SOCKET_PATH)
+socket_path: str = args.get("webserver", {}).get("socket_path", DEFAULT_SOCKET_PATH)
 socket_path = os.path.expanduser(socket_path)
 
-spoolman = SpoolmanClient(args["spoolman"]["spoolman-url"])
-moonraker = MoonrakerWebClient(args["moonraker"]["moonraker-url"])
-nfc_handler = NfcHandler(args["nfc"]["nfc-device"])
+spoolman: SpoolmanClient = SpoolmanClient(args["spoolman"]["spoolman-url"])
+moonraker: MoonrakerWebClient = MoonrakerWebClient(args["moonraker"]["moonraker-url"])
+nfc_handler: NfcHandler = NfcHandler(args["nfc"]["nfc-device"])
 
-last_nfc_id = None  # pylint: disable=C0103
-last_spool_id = None  # pylint: disable=C0103
+last_nfc_id: Optional[str] = None  # pylint: disable=C0103
+last_spool_id: Optional[str] = None  # pylint: disable=C0103
 
 
-def should_always_send():
+def should_always_send() -> bool:
     """Should SET_ACTIVE_* macros always be called when tag is read,
     or only when different?"""
-    always_send = args["moonraker"].get("always-send")
+    always_send: Optional[bool] = args["moonraker"].get("always-send")
 
     if always_send is None:
         return False
@@ -90,7 +90,7 @@ def should_always_send():
     return always_send
 
 
-def set_spool_and_filament(spool: int, filament: int):
+def set_spool_and_filament(spool: int, filament: int) -> None:
     """Calls moonraker with the current spool & filament"""
 
     if "old_spool" not in set_spool_and_filament.__dict__:
@@ -128,7 +128,7 @@ def should_clear_spool() -> bool:
     return False
 
 
-def on_nfc_tag_present(spool, filament, identifier):
+def on_nfc_tag_present(spool: Optional[str], filament: Optional[str], identifier: str) -> None:
     """Handles a read tag"""
 
     if identifier:
@@ -158,7 +158,7 @@ def on_nfc_tag_present(spool, filament, identifier):
         set_spool_and_filament(spool, filament)
 
 
-def on_nfc_no_tag_present():
+def on_nfc_no_tag_present() -> None:
     """Called when no tag is present (or tag without data)"""
     if should_clear_spool():
         set_spool_and_filament(0, 0)
@@ -192,14 +192,14 @@ def handle_set_nfc_id(request: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @request_handler("get_spools")
-def handle_get_spools(request: Dict[str, Any]) -> Dict[str, Any]:  # pylint: disable=W0613
+def handle_get_spools(_request: Dict[str, Any]) -> Dict[str, Any]:
     """Handle get_spools command"""
     spools = spoolman.get_spools()
     return {"status": "ok", "spools": spools}
 
 
 @request_handler("get_state")
-def handle_get_state(request: Dict[str, Any]) -> Dict[str, Any]:  # pylint: disable=W0613
+def handle_get_state(_request: Dict[str, Any]) -> Dict[str, Any]:
     """Handle get_state command"""
     return {
         "status": "ok",
@@ -225,10 +225,10 @@ def handle_client_request(request_data: str) -> Dict[str, Any]:
         return {"status": "error", "message": str(ex)}
 
 
-def run_socket_server():
+def run_socket_server() -> None:
     """Run the Unix domain socket server"""
     # Ensure the directory for the socket exists
-    socket_dir = os.path.dirname(socket_path)
+    socket_dir: str = os.path.dirname(socket_path)
     if socket_dir and not os.path.exists(socket_dir):
         try:
             os.makedirs(socket_dir, exist_ok=True)
@@ -266,7 +266,7 @@ def run_socket_server():
             sys.exit(1)
 
     try:
-        server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        server: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server.bind(socket_path)
         server.listen(5)
         logger.info("Socket server listening on %s", socket_path)
@@ -287,10 +287,11 @@ def run_socket_server():
 
     while True:
         try:
+            conn: socket.socket
             conn, _ = server.accept()
-            data = conn.recv(65536).decode("utf-8")
+            data: str = conn.recv(65536).decode("utf-8")
             if data:
-                response = handle_client_request(data)
+                response: Dict[str, Any] = handle_client_request(data)
                 conn.sendall(json.dumps(response).encode("utf-8"))
             conn.close()
         except Exception as ex:  # pylint: disable=W0718
@@ -299,7 +300,7 @@ def run_socket_server():
 
 if __name__ == "__main__":
 
-    def signal_handler(signum, frame):  # pylint: disable=W0613
+    def signal_handler(signum, _frame):
         """Handle termination signals"""
         logger.info("Received signal %s, shutting down...", signum)
         nfc_handler.stop()

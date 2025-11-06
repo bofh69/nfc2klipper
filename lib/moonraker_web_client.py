@@ -3,6 +3,8 @@
 
 """Moonraker Web Client"""
 
+from typing import Dict
+
 import requests
 
 
@@ -10,13 +12,13 @@ import requests
 class MoonrakerWebClient:
     """Moonraker Web Client"""
 
-    def __init__(self, url: str):
-        self.url = url
+    def __init__(self, url: str) -> None:
+        self.url: str = url
 
-    def set_spool_and_filament(self, spool: int, filament: int):
+    def set_spool_and_filament(self, spool: int, filament: int) -> None:
         """Calls moonraker with the current spool & filament"""
 
-        commands = {
+        commands: Dict[str, list] = {
             "commands": [
                 f"SET_ACTIVE_SPOOL ID={spool}",
                 f"SET_ACTIVE_FILAMENT ID={filament}",

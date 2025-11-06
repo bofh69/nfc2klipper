@@ -11,6 +11,7 @@ import json
 import os
 import socket
 import sys
+from typing import Any, Dict, Tuple, Union
 
 from flask import Flask, render_template
 from lib.config import Nfc2KlipperConfig
@@ -18,7 +19,7 @@ from lib.config import Nfc2KlipperConfig
 
 Nfc2KlipperConfig.configure_logging()
 
-args = Nfc2KlipperConfig.get_config()
+args: Dict[str, Any] = Nfc2KlipperConfig.get_config()
 
 if not args:
     print(
@@ -28,21 +29,21 @@ if not args:
     sys.exit(1)
 
 # Get socket path from config, with fallback to default
-socket_path = args.get("webserver", {}).get(
+socket_path: str = args.get("webserver", {}).get(
     "socket_path", Nfc2KlipperConfig.DEFAULT_SOCKET_PATH
 )
 socket_path = os.path.expanduser(socket_path)
 
-app = Flask(__name__)
+app: Flask = Flask(__name__)
 
 
-def send_request(request_data):
+def send_request(request_data: Dict[str, Any]) -> Dict[str, Any]:
     """Send a request to the backend via Unix domain socket"""
     try:
-        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client: socket.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         client.connect(socket_path)
         client.sendall(json.dumps(request_data).encode("utf-8"))
-        response = client.recv(65536).decode("utf-8")
+        response: str = client.recv(65536).decode("utf-8")
         client.close()
         return json.loads(response)
     except Exception as ex:  # pylint: disable=W0718
@@ -51,11 +52,11 @@ def send_request(request_data):
 
 
 @app.route("/w/<int:spool>/<int:filament>")
-def write_tag(spool, filament):
+def write_tag(spool: int, filament: int) -> Union[str, Tuple[str, int]]:
     """
     The web-api to write the spool & filament data to NFC/RFID tag
     """
-    response = send_request(
+    response: Dict[str, Any] = send_request(
         {"command": "write_tag", "spool": spool, "filament": filament}
     )
     if response.get("status") == "ok":
@@ -65,11 +66,11 @@ def write_tag(spool, filament):
 
 
 @app.route("/set_nfc_id/<int:spool>")
-def set_nfc_id(spool):
+def set_nfc_id(spool: int) -> Union[str, Tuple[str, int]]:
     """
     The web-api to write the current nfc_id to spool's nfc_id field in Spoolman
     """
-    response = send_request({"command": "set_nfc_id", "spool": spool})
+    response: Dict[str, Any] = send_request({"command": "set_nfc_id", "spool": spool})
     if response.get("status") == "ok":
         return "OK"
 
@@ -77,12 +78,12 @@ def set_nfc_id(spool):
 
 
 @app.route("/")
-def index():
+def index() -> Union[str, Tuple[str, int]]:
     """
     Returns the main index page.
     """
-    spools_response = send_request({"command": "get_spools"})
-    state_response = send_request({"command": "get_state"})
+    spools_response: Dict[str, Any] = send_request({"command": "get_spools"})
+    state_response: Dict[str, Any] = send_request({"command": "get_state"})
 
     if spools_response.get("status") != "ok":
         return (
@@ -97,15 +98,15 @@ def index():
             502,
         )
 
-    spools = (
+    spools: list = (
         spools_response.get("spools", [])
         if spools_response.get("status") == "ok"
         else []
     )
-    nfc_id = (
+    nfc_id: str = (
         state_response.get("nfc_id") if state_response.get("status") == "ok" else None
     )
-    spool_id = (
+    spool_id: int = (
         state_response.get("spool_id") if state_response.get("status") == "ok" else None
     )
 
