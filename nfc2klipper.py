@@ -11,14 +11,15 @@ import signal
 import sys
 import subprocess  # nosec
 import time
+from typing import Any, Dict, Optional
 
 from lib.config import Nfc2KlipperConfig
 
 Nfc2KlipperConfig.configure_logging()
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
-args = Nfc2KlipperConfig.get_config()
+args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config()
 
 if not args:
     # Run the backend to handle initial config setup
@@ -28,14 +29,14 @@ if not args:
     sys.exit(1)
 
 if __name__ == "__main__":
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    backend_script = os.path.join(script_dir, "nfc2klipper_backend.py")
-    api_script = os.path.join(script_dir, "nfc2klipper_api.py")
+    script_dir: str = os.path.dirname(os.path.abspath(__file__))
+    backend_script: str = os.path.join(script_dir, "nfc2klipper_backend.py")
+    api_script: str = os.path.join(script_dir, "nfc2klipper_api.py")
 
-    backend_process = None
-    api_process = None
+    backend_process: Optional[subprocess.Popen] = None
+    api_process: Optional[subprocess.Popen] = None
 
-    def cleanup_processes(signum, frame):  # pylint: disable=W0613
+    def cleanup_processes(signum: int, _frame: Any) -> None:
         """Clean up subprocesses on signal"""
         logger.info("Received signal %s, shutting down...", signum)
         if api_process:
