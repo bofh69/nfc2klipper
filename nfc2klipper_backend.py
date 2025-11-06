@@ -166,6 +166,7 @@ def handle_client_request(request_data):
             return {"status": "error", "message": "Failed to write to tag"}
 
         if command == "set_nfc_id":
+            global last_nfc_id  # pylint: disable=W0602
             spool = request.get("spool")
             logger.info("Set nfc_id=%s to spool=%s in Spoolman", last_nfc_id, spool)
 
