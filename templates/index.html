@@ -88,7 +88,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
             >Write</button>
     {{spool['id']}}: {{spool['filament']['vendor']['name']}} - {{spool['filament']['material']}} - {{spool['filament']['name']}}
     {% if spool['extra'] and nfc_id and spool['extra']['nfc_id'] == '"' + nfc_id + '"' %}
-	    (current nfc-id)
+	    (current spool from NFC-ID)
     {% endif %}
     {% if spool['id'] == spool_id %}
 	    (current spool-id)
