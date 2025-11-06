@@ -5,6 +5,7 @@
 
 """Backend service for NFC handling and communication with Moonraker/Spoolman."""
 
+import inspect
 import json
 import logging
 import os
@@ -14,7 +15,7 @@ import sys
 import shutil
 import threading
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Union
 
 import toml
 
@@ -24,15 +25,18 @@ from lib.spoolman_client import SpoolmanClient
 
 
 # Request handler registry
-_request_handlers: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {}
+_request_handlers: Dict[str, Callable[..., Dict[str, Any]]] = {}
 
 
 def request_handler(command_name: str) -> Callable:
     """Decorator to register a request handler for a specific command"""
-    def decorator(func: Callable[[Dict[str, Any]], Dict[str, Any]]) -> Callable:
+
+    def decorator(func: Callable[..., Dict[str, Any]]) -> Callable:
         _request_handlers[command_name] = func
         return func
+
     return decorator
+
 
 CFG_DIR: str = "~/.config/nfc2klipper"
 DEFAULT_SOCKET_PATH: str = "/home/pi/nfc2klipper/nfc2klipper.sock"
@@ -71,9 +75,34 @@ if not args:
 socket_path: str = args.get("webserver", {}).get("socket_path", DEFAULT_SOCKET_PATH)
 socket_path = os.path.expanduser(socket_path)
 
-spoolman: SpoolmanClient = SpoolmanClient(args["spoolman"]["spoolman-url"])
-moonraker: MoonrakerWebClient = MoonrakerWebClient(args["moonraker"]["moonraker-url"])
-nfc_handler: NfcHandler = NfcHandler(args["nfc"]["nfc-device"])
+# Check if we should use mock objects
+USE_MOCK_OBJECTS: bool = os.environ.get("NFC2KLIPPER_USE_MOCKS", "").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+if USE_MOCK_OBJECTS:
+    logger.info("Using mock objects for testing")
+    from lib.mock_objects import (
+        MockNfcHandler,
+        MockSpoolmanClient,
+        MockMoonrakerWebClient,
+    )
+
+    spoolman: Union[SpoolmanClient, "MockSpoolmanClient"] = MockSpoolmanClient(
+        args["spoolman"]["spoolman-url"]
+    )
+    moonraker: Union[MoonrakerWebClient, "MockMoonrakerWebClient"] = (
+        MockMoonrakerWebClient(args["moonraker"]["moonraker-url"])
+    )
+    nfc_handler: Union[NfcHandler, "MockNfcHandler"] = MockNfcHandler(
+        args["nfc"]["nfc-device"]
+    )
+else:
+    spoolman = SpoolmanClient(args["spoolman"]["spoolman-url"])
+    moonraker = MoonrakerWebClient(args["moonraker"]["moonraker-url"])
+    nfc_handler = NfcHandler(args["nfc"]["nfc-device"])
 
 last_nfc_id: Optional[str] = None  # pylint: disable=C0103
 last_spool_id: Optional[str] = None  # pylint: disable=C0103
@@ -82,7 +111,7 @@ last_spool_id: Optional[str] = None  # pylint: disable=C0103
 def should_always_send() -> bool:
     """Should SET_ACTIVE_* macros always be called when tag is read,
     or only when different?"""
-    assert args is not None
+    assert args is not None  # nosec
     always_send: Optional[bool] = args["moonraker"].get("always-send")
 
     if always_send is None:
@@ -124,13 +153,15 @@ def set_spool_and_filament(spool: int, filament: int) -> None:
 
 def should_clear_spool() -> bool:
     """Returns True if the config says the spool should be cleared"""
-    assert args is not None
+    assert args is not None  # nosec
     if args["moonraker"].get("clear_spool"):
         return True
     return False
 
 
-def on_nfc_tag_present(spool: Optional[str], filament: Optional[str], identifier: str) -> None:
+def on_nfc_tag_present(
+    spool: Optional[str], filament: Optional[str], identifier: str
+) -> None:
     """Handles a read tag"""
 
     if identifier:
@@ -170,10 +201,8 @@ def on_nfc_no_tag_present() -> None:
 
 
 @request_handler("write_tag")
-def handle_write_tag(request: Dict[str, Any]) -> Dict[str, Any]:
+def handle_write_tag(spool: int, filament: int) -> Dict[str, Any]:
     """Handle write_tag command"""
-    spool: int = request.get("spool", 0)
-    filament: int = request.get("filament", 0)
     logger.info("  write spool=%s, filament=%s", spool, filament)
     if nfc_handler.write_to_tag(spool, filament):
         return {"status": "ok"}
@@ -181,10 +210,9 @@ def handle_write_tag(request: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @request_handler("set_nfc_id")
-def handle_set_nfc_id(request: Dict[str, Any]) -> Dict[str, Any]:
+def handle_set_nfc_id(spool: int) -> Dict[str, Any]:
     """Handle set_nfc_id command"""
     global last_nfc_id  # pylint: disable=W0602,W0603
-    spool: int = request.get("spool", 0)
     logger.info("Set nfc_id=%s to spool=%s in Spoolman", last_nfc_id, spool)
 
     if last_nfc_id is None:
@@ -197,14 +225,14 @@ def handle_set_nfc_id(request: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @request_handler("get_spools")
-def handle_get_spools(_request: Dict[str, Any]) -> Dict[str, Any]:
+def handle_get_spools() -> Dict[str, Any]:
     """Handle get_spools command"""
     spools = spoolman.get_spools()
     return {"status": "ok", "spools": spools}
 
 
 @request_handler("get_state")
-def handle_get_state(_request: Dict[str, Any]) -> Dict[str, Any]:
+def handle_get_state() -> Dict[str, Any]:
     """Handle get_state command"""
     return {
         "status": "ok",
@@ -221,7 +249,14 @@ def handle_client_request(request_data: str) -> Dict[str, Any]:
 
         # Look up the handler for this command
         if command in _request_handlers:
-            return _request_handlers[command](request)
+            handler = _request_handlers[command]
+            # Extract arguments based on handler function signature
+            sig = inspect.signature(handler)
+            kwargs = {}
+            for param_name in sig.parameters:
+                if param_name in request:
+                    kwargs[param_name] = request[param_name]
+            return handler(**kwargs)
 
         return {"status": "error", "message": f"Unknown command: {command}"}
 

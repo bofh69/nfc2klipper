@@ -97,8 +97,7 @@ def index() -> Union[str, Tuple[str, int]]:
         error_msg = state_response.get("message", "Unknown error")
         app.logger.error("Backend state error: %s", error_msg)
         return (
-            "Got error fetching spool state from backend: "
-            + str(error_msg),
+            "Got error fetching spool state from backend: " + str(error_msg),
             502,
         )
 
