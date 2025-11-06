@@ -19,6 +19,7 @@ help:
 	@echo fmt - formats the python files.
 	@echo lint - check the python files with pylint.
 	@echo typecheck - check type annotations with mypy.
+	@echo run-mock - run nfc2klipper.py with mock objects for testing.
 	@echo clean - remove venv directory.
 
 $(VENV_TIMESTAMP): requirements.txt
@@ -51,7 +52,11 @@ typecheck: $(MYPY)
 reuse: $(REUSE)
 	$(REUSE) lint
 
+run-mock:
+	@echo "Starting nfc2klipper.py with mock objects..."
+	NFC2KLIPPER_USE_MOCKS=1 python3 nfc2klipper.py
+
 clean:
 	@rm -rf $(VENV) 2>/dev/null
 
-.PHONY: clean fmt lint typecheck reuse
+.PHONY: clean fmt lint typecheck reuse run-mock
