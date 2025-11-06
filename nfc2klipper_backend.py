@@ -14,12 +14,25 @@ import sys
 import shutil
 import threading
 from pathlib import Path
+from typing import Any, Callable, Dict
 
 import toml
 
 from lib.moonraker_web_client import MoonrakerWebClient
 from lib.nfc_handler import NfcHandler
 from lib.spoolman_client import SpoolmanClient
+
+
+# Request handler registry
+_request_handlers: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {}
+
+
+def request_handler(command_name: str) -> Callable:
+    """Decorator to register a request handler for a specific command"""
+    def decorator(func: Callable[[Dict[str, Any]], Dict[str, Any]]) -> Callable:
+        _request_handlers[command_name] = func
+        return func
+    return decorator
 
 CFG_DIR = "~/.config/nfc2klipper"
 DEFAULT_SOCKET_PATH = "/home/pi/nfc2klipper/nfc2klipper.sock"
@@ -151,44 +164,59 @@ def on_nfc_no_tag_present():
         set_spool_and_filament(0, 0)
 
 
-# pylint: disable=too-many-return-statements
-def handle_client_request(request_data):
+@request_handler("write_tag")
+def handle_write_tag(request: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle write_tag command"""
+    spool = request.get("spool")
+    filament = request.get("filament")
+    logger.info("  write spool=%s, filament=%s", spool, filament)
+    if nfc_handler.write_to_tag(spool, filament):
+        return {"status": "ok"}
+    return {"status": "error", "message": "Failed to write to tag"}
+
+
+@request_handler("set_nfc_id")
+def handle_set_nfc_id(request: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle set_nfc_id command"""
+    global last_nfc_id  # pylint: disable=W0602,W0603
+    spool = request.get("spool")
+    logger.info("Set nfc_id=%s to spool=%s in Spoolman", last_nfc_id, spool)
+
+    if last_nfc_id is None:
+        return {"status": "error", "message": "No nfc_id to write"}
+
+    if spoolman.set_nfc_id_for_spool(spool, last_nfc_id):
+        return {"status": "ok"}
+
+    return {"status": "error", "message": "Failed to send nfc_id to Spoolman"}
+
+
+@request_handler("get_spools")
+def handle_get_spools(request: Dict[str, Any]) -> Dict[str, Any]:  # pylint: disable=W0613
+    """Handle get_spools command"""
+    spools = spoolman.get_spools()
+    return {"status": "ok", "spools": spools}
+
+
+@request_handler("get_state")
+def handle_get_state(request: Dict[str, Any]) -> Dict[str, Any]:  # pylint: disable=W0613
+    """Handle get_state command"""
+    return {
+        "status": "ok",
+        "nfc_id": last_nfc_id,
+        "spool_id": last_spool_id,
+    }
+
+
+def handle_client_request(request_data: str) -> Dict[str, Any]:
     """Handle a request from the web API"""
     try:
         request = json.loads(request_data)
         command = request.get("command")
 
-        if command == "write_tag":
-            spool = request.get("spool")
-            filament = request.get("filament")
-            logger.info("  write spool=%s, filament=%s", spool, filament)
-            if nfc_handler.write_to_tag(spool, filament):
-                return {"status": "ok"}
-            return {"status": "error", "message": "Failed to write to tag"}
-
-        elif command == "set_nfc_id":
-            global last_nfc_id  # pylint: disable=W0602
-            spool = request.get("spool")
-            logger.info("Set nfc_id=%s to spool=%s in Spoolman", last_nfc_id, spool)
-
-            if last_nfc_id is None:
-                return {"status": "error", "message": "No nfc_id to write"}
-
-            if spoolman.set_nfc_id_for_spool(spool, last_nfc_id):
-                return {"status": "ok"}
-
-            return {"status": "error", "message": "Failed to send nfc_id to Spoolman"}
-
-        if command == "get_spools":
-            spools = spoolman.get_spools()
-            return {"status": "ok", "spools": spools}
-
-        if command == "get_state":
-            return {
-                "status": "ok",
-                "nfc_id": last_nfc_id,
-                "spool_id": last_spool_id,
-            }
+        # Look up the handler for this command
+        if command in _request_handlers:
+            return _request_handlers[command](request)
 
         return {"status": "error", "message": f"Unknown command: {command}"}
 
