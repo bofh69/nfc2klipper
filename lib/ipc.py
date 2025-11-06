@@ -32,6 +32,15 @@ class IPCClient:  # pylint: disable=R0903
             response: str = client.recv(65536).decode("utf-8")
             client.close()
             return json.loads(response)
+        except (FileNotFoundError, ConnectionRefusedError) as ex:
+            logger.error("Backend not running: %s", ex)
+            return {
+                "status": "error",
+                "message": (
+                    "The nfc2klipper_backend service is not running. "
+                    "Please start it with: python3 nfc2klipper_backend.py"
+                ),
+            }
         except Exception as ex:  # pylint: disable=W0718
             logger.error("Error communicating with server: %s", ex)
             return {"status": "error", "message": str(ex)}
