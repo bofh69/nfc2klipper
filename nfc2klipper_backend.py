@@ -9,54 +9,34 @@ import logging
 import os
 import signal
 import sys
-import shutil
 import threading
-from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-import toml
-
+from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCServer
 from lib.moonraker_web_client import MoonrakerWebClient
 from lib.nfc_handler import NfcHandler
 from lib.spoolman_client import SpoolmanClient
 
-
-CFG_DIR: str = "~/.config/nfc2klipper"
-DEFAULT_SOCKET_PATH: str = "/home/pi/nfc2klipper/nfc2klipper.sock"
-
-# pylint: disable=duplicate-code
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s %(levelname)s - %(name)s: %(message)s"
-)
+Nfc2KlipperConfig.configure_logging()
 logger: logging.Logger = logging.getLogger(__name__)
 
-args: Optional[Dict[str, Any]] = None  # pylint: disable=C0103
-for path in ["~/nfc2klipper.cfg", CFG_DIR + "/nfc2klipper.cfg"]:
-    cfg_filename: str = os.path.expanduser(path)
-    if os.path.exists(cfg_filename):
-        with open(cfg_filename, "r", encoding="utf-8") as fp:
-            args = toml.load(fp)
-            break
+args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config()
 
 if not args:
     print(
         "WARNING: The config file is missing, installing a default version.",
         file=sys.stderr,
     )
-    cfg_dir: str = os.path.expanduser(CFG_DIR)
-    if not os.path.exists(cfg_dir):
-        print(f"Creating dir {cfg_dir}", file=sys.stderr)
-        Path(cfg_dir).mkdir(parents=True, exist_ok=True)
-    script_dir: str = os.path.dirname(__file__)
-    from_filename: str = os.path.join(script_dir, "nfc2klipper.cfg")
-    to_filename: str = os.path.join(cfg_dir, "nfc2klipper.cfg")
-    shutil.copyfile(from_filename, to_filename)
-    print(f"Created {to_filename}, please update it", file=sys.stderr)
+    Nfc2KlipperConfig.install_config()
     sys.exit(1)
 
+args: Dict[str, Any] = args
+
 # Get socket path from config, with fallback to default
-socket_path: str = args.get("webserver", {}).get("socket_path", DEFAULT_SOCKET_PATH)
+socket_path: str = args.get("webserver", {}).get(
+    "socket_path", Nfc2KlipperConfig.DEFAULT_SOCKET_PATH
+)
 socket_path = os.path.expanduser(socket_path)
 
 # Check if we should use mock objects
@@ -226,7 +206,6 @@ def handle_get_state() -> Dict[str, Any]:
         "nfc_id": last_nfc_id,
         "spool_id": last_spool_id,
     }
-
 
 
 if __name__ == "__main__":
