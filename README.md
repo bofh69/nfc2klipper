@@ -30,6 +30,7 @@ Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID 
       - [Write with console application](#write-with-console-application)
   - [Run automatically with systemd](#run-automatically-with-systemd)
   - [Automatic upgrades with moonraker](#automatic-upgrades-with-moonraker)
+  - [Use with Happy-Hare](#user-with-happy-hare)
   - [See also](#see-also)
   - [Developer info](#developer-info)
 
@@ -247,6 +248,15 @@ Copy the `moonraker-nfc2klipper.cfg` file to the same dir as where
 ```toml
 [include moonraker-nfc2klipper.cfg]
 ```
+
+## Use with Happy-Hare
+(This is completly untested by me, please let me know if it works or not)
+
+Change the `setting_gcode` value in nfc2klipper.cfg to:
+```gcode
+MMU_GATE_MAP NEXT_SPOOLID={spool}
+```
+See Happy-Hare's [documentation](https://github.com/CooperGerman/Happy-Hare/wiki/Spoolman-Support#auto-setting-with-rfid-reader)
 
 ## See also
 If nfc2klipper doesn't work for some reason,

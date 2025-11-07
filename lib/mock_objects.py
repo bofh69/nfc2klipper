@@ -203,14 +203,38 @@ class MockSpoolmanClient:
 class MockMoonrakerWebClient:  # pylint: disable=R0903
     """Mock Moonraker Web Client for testing"""
 
-    def __init__(self, url: str) -> None:
+    def __init__(
+        self,
+        url: str,
+        setting_gcode_template: List[str],
+        clearing_gcode_template: List[str],
+    ) -> None:
         logger.info("MockMoonrakerWebClient initialized with url: %s", url)
         self.url: str = url
+        self.setting_gcode_template: List[str] = setting_gcode_template
+        self.clearing_gcode_template: List[str] = clearing_gcode_template
 
     def set_spool_and_filament(self, spool: int, filament: int) -> None:
         """Mock calls to moonraker with the current spool & filament"""
+        # Format each command template with spool and filament values
+        formatted_commands: List[str] = [
+            template.format(spool=spool, filament=filament)
+            for template in self.setting_gcode_template
+        ]
         logger.info(
             "MockMoonrakerWebClient: set_spool_and_filament called with spool=%s, filament=%s",
             spool,
             filament,
+        )
+        logger.info(
+            "MockMoonrakerWebClient: Would execute commands: %s", formatted_commands
+        )
+
+    def clear_spool_and_filament(self) -> None:
+        """Mock calls to moonraker with the current spool & filament"""
+
+        logger.info("MockMoonrakerWebClient: clear_spool_and_filament called")
+        logger.info(
+            "MockMoonrakerWebClient: Would execute commands: %s",
+            self.clearing_gcode_template,
         )
