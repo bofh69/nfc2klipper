@@ -10,7 +10,7 @@ import os
 import signal
 import sys
 import threading
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCServer
@@ -39,6 +39,13 @@ socket_path: str = args.get("webserver", {}).get(
 )
 socket_path = os.path.expanduser(socket_path)
 
+# Get command templates from config
+setting_gcode_template: List[str] = Nfc2KlipperConfig.get_setting_gcode(args)
+clearing_gcode_template: List[str] = Nfc2KlipperConfig.get_clearing_gcode(args)
+
+logger.info("Using setting_gcode: %s", setting_gcode_template)
+logger.info("Using clearing_gcode: %s", clearing_gcode_template)
+
 # Check if we should use mock objects
 USE_MOCK_OBJECTS: bool = os.environ.get("NFC2KLIPPER_USE_MOCKS", "").lower() in (
     "1",
@@ -58,14 +65,22 @@ if USE_MOCK_OBJECTS:
         args["spoolman"]["spoolman-url"]
     )
     moonraker: Union[MoonrakerWebClient, "MockMoonrakerWebClient"] = (
-        MockMoonrakerWebClient(args["moonraker"]["moonraker-url"])
+        MockMoonrakerWebClient(
+            args["moonraker"]["moonraker-url"],
+            setting_gcode_template,
+            clearing_gcode_template,
+        )
     )
     nfc_handler: Union[NfcHandler, "MockNfcHandler"] = MockNfcHandler(
         args["nfc"]["nfc-device"]
     )
 else:
     spoolman = SpoolmanClient(args["spoolman"]["spoolman-url"])
-    moonraker = MoonrakerWebClient(args["moonraker"]["moonraker-url"])
+    moonraker = MoonrakerWebClient(
+        args["moonraker"]["moonraker-url"],
+        setting_gcode_template,
+        clearing_gcode_template,
+    )
     nfc_handler = NfcHandler(args["nfc"]["nfc-device"])
 
 last_nfc_id: Optional[str] = None  # pylint: disable=C0103
@@ -109,7 +124,10 @@ def set_spool_and_filament(spool: int, filament: int) -> None:
     set_spool_and_filament.old_filament = None  # type: ignore[attr-defined]
 
     try:
-        moonraker.set_spool_and_filament(spool, filament)
+        if spool and filament:
+            moonraker.set_spool_and_filament(spool, filament)
+        else:
+            moonraker.clear_spool_and_filament()
     except Exception as ex:  # pylint: disable=W0718
         logger.error(ex)
         return
@@ -121,7 +139,7 @@ def set_spool_and_filament(spool: int, filament: int) -> None:
 def should_clear_spool() -> bool:
     """Returns True if the config says the spool should be cleared"""
     assert args is not None  # nosec
-    if args["moonraker"].get("clear_spool"):
+    if args["moonraker"].get("clear-spool"):
         return True
     return False
 
@@ -164,6 +182,7 @@ def on_nfc_tag_present(
 def on_nfc_no_tag_present() -> None:
     """Called when no tag is present (or tag without data)"""
     if should_clear_spool():
+
         set_spool_and_filament(0, 0)
 
 

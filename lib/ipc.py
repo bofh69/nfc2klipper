@@ -60,7 +60,7 @@ class IPCServer:
         """Decorator to register a request handler for a specific command"""
 
         def decorator(
-            func: Callable[..., Dict[str, Any]]
+            func: Callable[..., Dict[str, Any]],
         ) -> Callable[..., Dict[str, Any]]:
             self.request_handlers[command_name] = func
             return func
