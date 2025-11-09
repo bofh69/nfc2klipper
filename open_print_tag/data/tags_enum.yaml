@@ -1,0 +1,380 @@
+## Biological properties
+# =====================================
+
+- key: 0
+  name: filtration_recommended
+  description: Releases a higher concentration of unsafe particles/fumes during printing so a HEPA and carbon filter is strongly recommended.
+
+- key: 1
+  name: biocompatible
+  description: Certified biocompatibility (does not cause harmful effects when in contact with the body)
+
+- key: 61
+  name: home_compostable
+  description: Decomposes into natural elements in a home compost system at ambient temperatures.
+
+- key: 62
+  name: industrially_compostable
+  description: Decomposes into natural elements under specific temperature and microbial conditions in commercial composting facilities.
+
+- key: 63
+  name: bio_based
+  description: Predominantly made from renewable biological resources, like plants.
+
+- key: 2
+  name: antibacterial
+  description: Has antibacterial properties
+
+- key: 3
+  name: air_filtering
+  description: Has air filtering properties (absorbs/filters harmful compounds/particles from the air)
+
+# Physical properties
+# =====================================
+
+- key: 4
+  name: abrasive
+  description: The material is abrasive and requires an abrasive-resistant nozzle.
+
+- key: 5
+  name: foaming
+  description: The material increases its volume during extrusion
+
+- key: 67
+  name: castable
+  description:
+    - The material is suitable to be used as a sacrificial pattern for investement casting.
+    - It can be cleanly removed from the mold (typically burned out or melted away), leaving minimal residue (for example ashes).
+    - This does NOT mean that the material is used for the mold or the final cast itself, only the investment pattern.
+
+- key: 6
+  name: self_extinguishing
+  description:
+    - The material is self-extinguishing. This does not mean that the material is not flammable, just that burning it implies more energy than it produces.
+    - Meets at least UL 94 HB.
+
+- key: 7
+  name: paramagnetic
+  description: The material has paramagnetic properties, meaning that it is (weakly) attracted to magnets.
+
+- key: 8
+  name: radiation_shielding
+  description: Has radiation shielding properties
+
+- key: 9
+  name: high_temperature
+  description:
+    - The material softens at higher temperatures than what is common for the material type, while keeping similar printing temperatures.
+    - Can be used for HTPLA filament while keeping the PLA material type.
+    - This does NOT indicate increase resistance to flame/burning.
+    - "Note: If the material type would be 'HTPLA', adding this tag would mean 'high-temperature variant of a high-temperature PLA'"
+
+# Electrical properties
+# ========================================
+
+- key: 10
+  name: esd_safe
+  description:
+    - The material is static dissipative - prevents electrostatic charge buildup by allowing gradual dissipation of the charge.
+    - Useful for protecting sensitive electronic components.
+    - Sheet resistance R >= 1e5 Ω/□ && R < 1e12 Ω/□ or volumetric resistivity ρ >= 1e4 Ω⋅cm && ρ < 1e11 Ω⋅cm.
+    - The tag does NOT cover the "anti-static" materials (that have higher resistances).
+
+- key: 11
+  name: conductive
+  description:
+    - The material can conduct electricity.
+    - This does NOT mean that it the material is a good conductor, such as metals. Common "conductive" material have resistances in the range of kiloohms on 10 cm of filament.
+    - Sheet resistance R < 1e5 Ω/□ or volumetric resistivity ρ < 1e4 Ω⋅cm.
+
+- key: 70
+  name: emi_shielding
+  implies: [conductive]
+  description:
+    - The material can be effectively used for shielding against electromagnetic interference.
+    - Sheet resistance R < 1 Ω/□ or volumetric resistivity ρ < 1e-2 Ω⋅cm.
+
+# Chemical properties
+# =====================================
+
+- key: 12
+  name: blend
+  description: The material is a blend of multiple polymers or a base polymer with significant additives that alter its properties and may require a specific print profile.
+
+- key: 13
+  name: water_soluble
+  description: Can be dissolved in water
+
+- key: 14
+  name: ipa_soluble
+  description: Can be dissolved in IPA (isopropylalcohol)
+
+- key: 15
+  name: limonene_soluble
+  description: Can be dissolved in limonene
+
+- key: 64
+  name: low_outgassing
+  description: Releases only minimal gas (and vapor) when placed in a vacuum.
+
+# Color related
+# =====================================
+
+- key: 16
+  name: matte
+  description:
+    - Produces matte, non-shiny surface (very low specular reflection coefficient)
+
+- key: 17
+  name: silk
+  description:
+    - Produces smooth, shiny/glossy surface (higher specular reflection coefficient)
+
+- key: 18
+  deprecated: true
+
+
+- key: 19
+  name: translucent
+  description:
+   - Not fully opaque – [HueForge TD](https://shop.thehueforge.com/blogs/news/what-is-hueforge) >= X (exact X will be determined later)
+   - The material with this tag can possibly disperse light, meaning that while the light goes through it, the image is "blurred" and one does not see clearly what's on the other side. See the `transparent` tag.
+
+- key: 20
+  name: transparent
+  implies: [translucent]
+  description:
+    - Not fully opaque, does not disperse light.
+    - Under correct printing conditions, can be printed with a see-through glass-like transparency.
+
+- key: 65
+  name: without_pigments
+  hints: [translucent]
+  description:
+    - The material is of its "natural" color, no pigments were added
+
+- key: 21
+  name: iridescent
+  description:
+    - Same as mystic
+    - Changes color based on the viewing angle
+    - See https://en.wikipedia.org/wiki/Iridescence
+
+- key: 22
+  name: pearlescent
+  implies: [iridescent]
+  description:
+    - Special case of iridescent where the reflected light is mostly white
+    - See https://en.wikipedia.org/wiki/Iridescence#Pearlescence
+
+- key: 23
+  name: glitter
+  description:
+    - Contains coarse glitter particles, causing a shimmering effect.
+    - Similar to iridescent/pearlescent, but the individual particles causing the effect are larger, visible with the naked eye
+
+- key: 24
+  name: glow_in_the_dark
+  description:
+    - Glows in the dark (phosphorescent).
+    - The glow color doesn't necessarily match the base material color (`illuminescent_color_change`)
+    - The different glow color can be specified as secondary color of the material.
+
+- key: 25
+  name: neon
+  description:
+    - Neon color/glows under UV light (fluorescent)
+    - The glow color doesn't necessarily match the base material color (`illuminescent_color_change`)
+    - The different glow color can be specified as secondary color of the material.
+
+- key: 26
+  name: illuminescent_color_change
+  description:
+    - The glow color (caused by illuminiscence) is different to the material base color.
+    - For example the material is blue, but glows green in the dark or under the UV light.
+    - The glow color can be specified as a secondary color of the material.
+
+- key: 27
+  name: temperature_color_change
+  description:
+    - Changes color based on the temperature.
+
+- key: 28
+  name: gradual_color_change
+  description:
+    - Transitions between colors as the filament is extruded.
+    - Does not necessary mean that the filament must go through the rainbow colors, gradual color change between two colors is enough to qualify
+
+- key: 29
+  name: coextruded
+  description:
+    - Co-extruded from multiple colors. The colors are all present at any cross-section of the filament.
+    - Do not confuse with `gradual_color_change`
+    - Does not have a primary color, number of colors can be derived from the defined secondary colors.
+
+# Materials
+# =====================================
+# Can be combined with `particles_X` tags, for example `contains_carbon` + `particles_fiber` → contains carbon fibers
+
+- key: 30
+  name: contains_carbon
+  description:
+    - Contains carbon
+
+- key: 31
+  name: contains_carbon_fiber
+  implies: [contains_carbon]
+  description:
+    - Contains carbon fibers
+
+- key: 32
+  name: contains_carbon_nano_tubes
+  implies: [contains_carbon]
+  description:
+    - Contains carbon nano tubes
+    - "Note: The name 'nano tubes' describes the diameter, but the tubes are typically several micrometers long, so this tag actually implies 'particles_micro'"
+
+- key: 33
+  name: contains_glass
+  description:
+    - Contains glass
+
+- key: 34
+  name: contains_glass_fiber
+  implies: [contains_glass]
+  description:
+    - Contains glass fibers
+
+- key: 35
+  name: contains_kevlar
+  description:
+    - Contains kevlar (aramid)
+
+- key: 68
+  name: contains_ptfe
+
+# Minerals
+
+- key: 36
+  name: contains_stone
+  hints: [abrasive]
+
+- key: 37
+  name: contains_magnetite
+  hints: [abrasive]
+
+# Organics
+
+- key: 38
+  name: contains_organic_material
+
+- key: 39
+  name: contains_cork
+  implies: [contains_organic_material]
+
+- key: 40
+  name: contains_wax
+  implies: [contains_organic_material]
+
+- key: 41
+  name: contains_wood
+  implies: [contains_organic_material]
+
+- key: 66
+  name: contains_algae
+  implies: [contains_organic_material]
+
+- key: 42
+  name: contains_bamboo
+  implies: [contains_wood]
+
+- key: 43
+  name: contains_pine
+  implies: [contains_wood]
+
+# Ceramic
+
+- key: 44
+  name: contains_ceramic
+  hints: [abrasive]
+
+- key: 45
+  name: contains_boron_carbide
+  implies: [contains_ceramic]
+  hints: [radiation_shielding]
+
+# Metals
+
+- key: 46
+  name: contains_metal
+  description: Contains metal. Specific type of metal contained can be expressed by an other tag.
+  hints: [abrasive]
+
+- key: 47
+  name: contains_bronze
+  implies: [contains_metal]
+
+- key: 48
+  name: contains_iron
+  implies: [contains_metal]
+
+- key: 49
+  name: contains_steel
+  implies: [contains_metal]
+
+- key: 50
+  name: contains_silver
+  implies: [contains_metal]
+  hints: [antibacterial]
+
+- key: 51
+  name: contains_copper
+  implies: [contains_metal]
+
+- key: 52
+  name: contains_aluminium
+  implies: [contains_metal]
+
+- key: 53
+  name: contains_brass
+  implies: [contains_metal]
+
+- key: 54
+  name: contains_tungsten
+  implies: [contains_metal]
+  hints: [radiation_shielding]
+  description: Contains Tungsten (useful for radiation shielding).
+
+# Imitation
+# =====================================
+
+- key: 55
+  name: imitates_wood
+  description: Imitates wood
+
+- key: 56
+  name: imitates_metal
+  description: Imitates metal
+
+- key: 57
+  name: imitates_marble
+  description: Imitates marble
+
+- key: 58
+  name: imitates_stone
+  description: Imitates stone
+
+# Other
+# =====================================
+
+- key: 59
+  name: lithophane
+  description: Specifically designed for lithophaning
+
+- key: 60
+  name: recycled
+  description: Part of the material is recycled
+
+- key: 69
+  name: limited_edition
+  description: The material is a limited edition run
