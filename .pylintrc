@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 Sebastian Andersson <sebastian@bittr.nu>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[MASTER]
+# Ignore open_print_tag directory (external dependency from PRUSA RESEARCH A.S.)
+ignore=open_print_tag
+init-hook='import sys; sys.path.append("open_print_tag/utils")'
+
+[MESSAGES CONTROL]
+# Disable TODO warnings
+disable=W0511
