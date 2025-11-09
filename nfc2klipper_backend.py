@@ -16,7 +16,7 @@ from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCServer
 from lib.moonraker_web_client import MoonrakerWebClient
 from lib.nfc_handler import NfcHandler
-from lib.nfc_parsers import NdefTextParser, TagIdentifierParser
+from lib.nfc_parsers import NdefTextParser, TagIdentifierParser, OpenTag3DParser
 from lib.spoolman_client import SpoolmanClient
 
 Nfc2KlipperConfig.configure_logging()
@@ -90,11 +90,36 @@ last_spool_id: Optional[str] = None  # pylint: disable=C0103
 # Create IPC server instance
 ipc_server: IPCServer = IPCServer(socket_path)
 
+# Get OpenTag3D filament name template
+opentag3d_filament_template: str = (
+    Nfc2KlipperConfig.get_opentag3d_filament_name_template(args)
+)
+logger.info("Using OpenTag3D filament name template: %s", opentag3d_filament_template)
+
+# Get OpenTag3D field mappings
+opentag3d_filament_mapping: Dict[str, str] = (
+    Nfc2KlipperConfig.get_opentag3d_filament_field_mapping(args)
+)
+opentag3d_spool_mapping: Dict[str, str] = (
+    Nfc2KlipperConfig.get_opentag3d_spool_field_mapping(args)
+)
+logger.info("OpenTag3D filament field mapping: %s", opentag3d_filament_mapping)
+logger.info("OpenTag3D spool field mapping: %s", opentag3d_spool_mapping)
+
 # Create parsers for different tag formats
-# List of parsers to try in order - NDEF text parser first, then tag ID lookup
+# List of parsers to try in order:
+# 1. NDEF text parser for simple SPOOL:X FILAMENT:Y format
+# 2. Tag ID lookup in Spoolman's nfc_id extra field
+# 3. OpenTag3D parser - only called if tag not found via nfc_id
 parsers: List[Any] = [
     NdefTextParser(),
     TagIdentifierParser(spoolman),
+    OpenTag3DParser(
+        spoolman,
+        opentag3d_filament_template,
+        opentag3d_filament_mapping,
+        opentag3d_spool_mapping,
+    ),
 ]
 
 

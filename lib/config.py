@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import toml
+import toml  # pylint: disable=import-error
 
 
 class Nfc2KlipperConfig:
@@ -80,3 +80,54 @@ class Nfc2KlipperConfig:
         if not setting_gcode:
             setting_gcode = "CLEAR_ACTIVE_SPOOL\n" + "SET_ACTIVE_FILAMENT ID=0"
         return [cmd.strip() for cmd in setting_gcode.split("\n") if cmd.strip()]
+
+    @classmethod
+    def get_opentag3d_filament_name_template(cls, config: Dict[str, Any]) -> str:
+        """Get OpenTag3D filament name template from config, or default value"""
+
+        opentag3d_config: Optional[Dict[str, Any]] = config.get("opentag3d")
+        template: Optional[str] = None
+        if opentag3d_config:
+            template = opentag3d_config.get("filament_name_template")
+        if not template:
+            # Default template: material_base material_mod - color_name
+            # Empty fields will be cleaned up by the parser
+            template = "{material_base} {material_mod} - {color_name}"
+        return template
+
+    @classmethod
+    def get_opentag3d_filament_field_mapping(
+        cls, config: Dict[str, Any]
+    ) -> Dict[str, str]:
+        """Get OpenTag3D to Spoolman filament field mapping from config"""
+
+        opentag3d_config: Optional[Dict[str, Any]] = config.get("opentag3d")
+        if opentag3d_config:
+            mapping = opentag3d_config.get("filament_field_mapping", {})
+            if mapping:
+                return mapping
+
+        # Default mapping
+        return {
+            "weight": "target_weight",
+            "settings_bed_temp": "bed_temp",
+            "settings_extruder_temp": "print_temp",
+        }
+
+    @classmethod
+    def get_opentag3d_spool_field_mapping(
+        cls, config: Dict[str, Any]
+    ) -> Dict[str, str]:
+        """Get OpenTag3D to Spoolman spool field mapping from config"""
+
+        opentag3d_config: Optional[Dict[str, Any]] = config.get("opentag3d")
+        if opentag3d_config:
+            mapping = opentag3d_config.get("spool_field_mapping", {})
+            if mapping:
+                return mapping
+
+        # Default mapping
+        return {
+            "remaining_weight": "measured_filament_weight",
+            "lot_nr": "serial",
+        }

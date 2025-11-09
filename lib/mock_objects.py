@@ -12,7 +12,7 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-import ndef
+import ndef  # pylint: disable=import-error
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -209,6 +209,92 @@ class MockSpoolmanClient:
                 logger.info("MockSpoolmanClient: NFC ID set successfully")
                 return True
         return False
+
+    def find_vendor_by_name(self, name: str) -> Optional[int]:
+        """Find a vendor by name"""
+        logger.info("MockSpoolmanClient: find_vendor_by_name called with name=%s", name)
+        # Mock vendors
+        vendors: List[Dict[str, Any]] = [
+            {"id": 1, "name": "McGreedy"},
+            {"id": 2, "name": "Flaky Inc"},
+            {"id": 3, "name": "Too Late Company"},
+        ]
+        for vendor in vendors:
+            vendor_name = vendor.get("name", "")
+            if isinstance(vendor_name, str) and vendor_name.lower() == name.lower():
+                logger.info("MockSpoolmanClient: Found vendor %s", vendor["id"])
+                vendor_id = vendor["id"]
+                if isinstance(vendor_id, int):
+                    return vendor_id
+        logger.info("MockSpoolmanClient: Vendor not found")
+        return None
+
+    def create_vendor(self, name: str) -> Optional[int]:
+        """Create a new vendor"""
+        logger.info("MockSpoolmanClient: create_vendor called with name=%s", name)
+        # Return a mock vendor ID
+        new_id = 100
+        logger.info("MockSpoolmanClient: Created vendor with id=%s", new_id)
+        return new_id
+
+    def find_filament_by_vendor_and_name(
+        self, vendor_id: int, name: str
+    ) -> Optional[int]:
+        """Find a filament by vendor ID and name"""
+        logger.info(
+            "MockSpoolmanClient: find_filament_by_vendor_and_name called "
+            "with vendor_id=%s, name=%s",
+            vendor_id,
+            name,
+        )
+        for spool in self.spools:
+            if "filament" in spool and spool["filament"]:
+                filament = spool["filament"]
+                if "vendor" in filament and filament["vendor"]:
+                    # vendor = filament["vendor"]  # Not used
+                    if filament.get("name", "").lower() == name.lower():
+                        logger.info(
+                            "MockSpoolmanClient: Found filament %s", filament["id"]
+                        )
+                        return filament["id"]
+        logger.info("MockSpoolmanClient: Filament not found")
+        return None
+
+    def create_filament(
+        self,
+        data: Dict[str, Any],
+    ) -> Optional[int]:
+        """Create a new filament"""
+        logger.info(
+            "MockSpoolmanClient: create_filament called with data=%s",
+            data,
+        )
+        # Return a mock filament ID
+        new_id = 200
+        logger.info("MockSpoolmanClient: Created filament with id=%s", new_id)
+        return new_id
+
+    def create_spool(
+        self,
+        data: Dict[str, Any],
+    ) -> Optional[int]:
+        """Create a new spool"""
+        logger.info(
+            "MockSpoolmanClient: create_spool called with data=%s",
+            data,
+        )
+        # Create and add a new spool
+        new_id = len(self.spools) + 1
+        filament_id = data.get("filament_id")
+        new_spool = {
+            "id": new_id,
+            "filament": {"id": filament_id},
+            "remaining_weight": data.get("remaining_weight", 0),
+            "extra": data.get("extra", {}),
+        }
+        self.spools.append(new_spool)
+        logger.info("MockSpoolmanClient: Created spool with id=%s", new_id)
+        return new_id
 
 
 class MockMoonrakerWebClient:  # pylint: disable=R0903
