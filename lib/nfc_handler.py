@@ -127,4 +127,5 @@ class NfcHandler:
                 identifier = ":".join(f"{byte:x}" for byte in tag.identifier)
             else:
                 identifier = "<undefined>"
+
             self.on_nfc_tag_present(tag.ndef, identifier)

@@ -45,6 +45,17 @@ venv/bin/pip3 install -r requirements.txt
 
 Copy and update `nfc2klipper.cfg` to `~/.config/nfc2klipper/nfc2klipper.cfg`.
 
+## Preparing Spoolman
+
+nfc2klipper can use RFID/NFC tags containing its own format, but
+it can also use tags in other formats, like tags for
+Filaman, OpenTag3D and probably many others.
+
+For it to be able to use other tag formats, the spool needs to have
+an extra `nfc_id` field (just like FilaMan). Add it in Spoolman under
+settings -> extra fields -> spool.
+
+
 ## Preparing an NFC reader
 
 I use a PN532 based reader (Elechouse PN532 NFC RFID Module V3, if you
@@ -145,11 +156,11 @@ development easier.
 
 ### Using tag's id
 
-Add an extra field in Spoolman for the spools called `nfc_id`.
+The latest read tags' identifier can be set in the Spool record in Spoolman via the web
+server's page, click on the "Set in Spoolman" button for the spool that's loaded.
 
-If not already done by FilaMan, the latest read tags' identifier can
-be set in Spoolman via the web server's page, click on the "Set in Spoolman"
-button for the spool that's loaded.
+That way the tag will be connected to that spool without having to change its data.
+It will also make the spool connected in FilaMan.
 
 
 ### SPOOL & FILAMENT in tags
@@ -257,6 +268,20 @@ Change the `setting_gcode` value in nfc2klipper.cfg to:
 MMU_GATE_MAP NEXT_SPOOLID={spool}
 ```
 See Happy-Hare's [documentation](https://github.com/CooperGerman/Happy-Hare/wiki/Spoolman-Support#auto-setting-with-rfid-reader)
+
+## Use with OpenTag3D tags
+[OpenTag3d](https://opentag3d.info/) is a tag format containing info about the spool and filament.
+nfc2klipper can read the format, create vendor, filament and spool records in Spoolman from the tag's data.
+
+The Filament's name is by default generated from the tag's `material_base` `material_mod` and `color_name` fields.
+That can be changed in the configuration file.
+
+The created spools and filaments in spoolman gets the data from the tag. Which tag's data field should end up in which spoolman field
+is also configurable.
+
+See Spoolman's API documentation [here](https://donkie.github.io/Spoolman/) to see the names of the fields in Spoolman.
+You can also add extra fields in Spoolman for saving the data from the OpenTag3D tags.
+
 
 ## See also
 If nfc2klipper doesn't work for some reason,
