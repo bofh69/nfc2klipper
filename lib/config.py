@@ -90,9 +90,8 @@ class Nfc2KlipperConfig:
         if opentag3d_config:
             template = opentag3d_config.get("filament_name_template")
         if not template:
-            # Default template: material_base material_mod - color_name
-            # Empty fields will be cleaned up by the parser
-            template = "{material_base} {material_mod} - {color_name}"
+            # Default template: just the color name
+            template = "{color_name}"
         return template
 
     @classmethod

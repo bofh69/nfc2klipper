@@ -530,9 +530,11 @@ class OpenTag3DParser:
                 logger.error("Failed to create vendor")
                 return None, None
 
-        # Find or create filament using the generated name
-        filament_id = self.spoolman_client.find_filament_by_vendor_and_name(
-            vendor_id, filament_name
+        # Find or create filament using vendor, material, and name
+        # Material is constructed from base_material and material_modifiers
+        material = tag_data["material_name"]
+        filament_id = self.spoolman_client.find_filament_by_vendor_material_and_name(
+            vendor_id, material, filament_name
         )
 
         if filament_id is None:
@@ -544,7 +546,7 @@ class OpenTag3DParser:
             filament_data = {
                 "vendor_id": vendor_id,
                 "name": filament_name,
-                "material": tag_data["material_base"],
+                "material": material,
                 "density": tag_data["density"],
                 "diameter": tag_data["diameter_mm"],
                 "color_hex": tag_data["color_hex"],
