@@ -270,6 +270,8 @@ MMU_GATE_MAP NEXT_SPOOLID={spool}
 See Happy-Hare's [documentation](https://github.com/CooperGerman/Happy-Hare/wiki/Spoolman-Support#auto-setting-with-rfid-reader)
 
 ## Use with OpenTag3D tags
+(This is not tested with real tags. Please open an issue if it works or not).
+
 [OpenTag3d](https://opentag3d.info/) is a tag format containing info about the spool and filament.
 nfc2klipper can read the format, create vendor, filament and spool records in Spoolman from the tag's data.
 

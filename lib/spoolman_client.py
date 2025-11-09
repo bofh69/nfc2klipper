@@ -195,6 +195,55 @@ class SpoolmanClient:
             )
             return None
 
+    def find_filament_by_vendor_material_and_name(
+        self, vendor_id: int, material: str, name: str
+    ) -> Optional[int]:
+        """Find a filament by vendor ID, material, and name
+
+        Args:
+            vendor_id: Vendor ID
+            material: Filament material (e.g., "PLA", "PETG-CF")
+            name: Filament name
+
+        Returns:
+            Filament ID if found, None otherwise
+        """
+        try:
+            url: str = self.url + "/api/v1/filament"
+            params = {"vendor_id": vendor_id}
+            response = requests.get(url, params=params, timeout=10)
+            if response.status_code != 200:
+                logger.error(
+                    "Failed to find filament '%s' (material: %s) for vendor %d: HTTP %d - %s",
+                    name,
+                    material,
+                    vendor_id,
+                    response.status_code,
+                    response.text,
+                )
+                return None
+
+            filaments = response.json()
+
+            # Search for matching filament (case-insensitive) by material AND name
+            for filament in filaments:
+                if (
+                    filament.get("name", "").lower() == name.lower()
+                    and filament.get("material", "").lower() == material.lower()
+                ):
+                    return filament["id"]
+
+            return None
+        except Exception as ex:  # pylint: disable=W0718
+            logger.error(
+                "Exception while finding filament '%s' (material: %s) for vendor %d: %s",
+                name,
+                material,
+                vendor_id,
+                ex,
+            )
+            return None
+
     def create_filament(
         self,
         data: Dict[str, Any],
