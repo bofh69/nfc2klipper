@@ -12,6 +12,8 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
 
+import ndef
+
 logger: logging.Logger = logging.getLogger(__name__)
 
 
@@ -23,9 +25,7 @@ class MockNfcHandler:
         self.status: str = ""
         self.nfc_device: str = nfc_device
         self.on_nfc_no_tag_present: Optional[Callable[[], None]] = None
-        self.on_nfc_tag_present: Optional[
-            Callable[[Optional[str], Optional[str], str], None]
-        ] = None
+        self.on_nfc_tag_present: Optional[Callable[[Any, str], None]] = None
         self.should_stop: bool = False
         self.thread: Optional[threading.Thread] = None
         self.tag_present: bool = False
@@ -39,7 +39,7 @@ class MockNfcHandler:
 
     def set_tag_present_callback(
         self,
-        on_nfc_tag_present: Callable[[Optional[str], Optional[str], str], None],
+        on_nfc_tag_present: Callable[[Any, str], None],
     ) -> None:
         """Sets a callback that will be called when a tag has been read"""
         logger.info("MockNfcHandler: set_tag_present_callback registered")
@@ -73,6 +73,17 @@ class MockNfcHandler:
                     spool_id = str(1 + (iteration % 3))
                     filament_id = str(10 + (iteration % 3))
                     nfc_id = f"aa:bb:cc:dd:{iteration % 10:02x}"
+                    # Create mock NDEF object with records
+
+                    class MockNdef:  # pylint: disable=too-few-public-methods
+                        """Mock NDEF data structure"""
+
+                        def __init__(self, records):
+                            self.records = records
+
+                    ndef_data = MockNdef(
+                        [ndef.TextRecord(f"SPOOL:{spool_id}\nFILAMENT:{filament_id}\n")]
+                    )
                     logger.info(
                         "MockNfcHandler: Calling on_nfc_tag_present with "
                         "spool=%s, filament=%s, nfc_id=%s",
@@ -80,7 +91,7 @@ class MockNfcHandler:
                         filament_id,
                         nfc_id,
                     )
-                    self.on_nfc_tag_present(spool_id, filament_id, nfc_id)
+                    self.on_nfc_tag_present(ndef_data, nfc_id)
             else:
                 if self.on_nfc_no_tag_present:
                     logger.info("MockNfcHandler: Calling on_nfc_no_tag_present")

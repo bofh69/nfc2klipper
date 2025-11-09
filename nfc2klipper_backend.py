@@ -10,12 +10,13 @@ import os
 import signal
 import sys
 import threading
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCServer
 from lib.moonraker_web_client import MoonrakerWebClient
 from lib.nfc_handler import NfcHandler
+from lib.nfc_parsers import NdefTextParser, TagIdentifierParser
 from lib.spoolman_client import SpoolmanClient
 
 Nfc2KlipperConfig.configure_logging()
@@ -74,6 +75,13 @@ last_spool_id: Optional[str] = None  # pylint: disable=C0103
 # Create IPC server instance
 ipc_server: IPCServer = IPCServer(socket_path)
 
+# Create parsers for different tag formats
+# List of parsers to try in order - NDEF text parser first, then tag ID lookup
+parsers: List[Any] = [
+    NdefTextParser(),
+    TagIdentifierParser(spoolman),
+]
+
 
 def should_always_send() -> bool:
     """Should SET_ACTIVE_* macros always be called when tag is read,
@@ -126,39 +134,39 @@ def should_clear_spool() -> bool:
     return False
 
 
-def on_nfc_tag_present(
-    spool: Optional[str], filament: Optional[str], identifier: str
-) -> None:
+def on_nfc_tag_present(ndef_data: Any, identifier: str) -> None:
     """Handles a read tag"""
 
     if identifier:
         global last_nfc_id  # pylint: disable=W0603
         last_nfc_id = identifier
+
+    # Try each parser in order until one returns valid spool and filament data
+    spool: Optional[str] = None
+    filament: Optional[str] = None
+
+    for parser in parsers:
+        spool_and_filament = parser.parse(ndef_data, identifier)
+        if spool_and_filament:
+            spool, filament = spool_and_filament
+            if spool and filament:
+                # Found valid data, stop trying other parsers
+                break
+
     if spool:
         global last_spool_id  # pylint: disable=W0603
         last_spool_id = spool
 
-    if not (spool and filament):
-        logger.debug("Fetching data from spoolman from tags' id: %s", identifier)
-        spool_data = spoolman.get_spool_from_nfc_id(identifier)
-        if spool_data:
-            spool_int = spool_data.get("id")
-            filament_int = None
-            if "filament" in spool_data:
-                filament_int = spool_data["filament"].get("id")
-        else:
-            logger.info(
-                "Did not find spool records in tag nor from its id (%s) in spoolman",
-                identifier,
-            )
-            return
-    else:
-        # Convert string to int if needed
-        spool_int = int(spool) if spool else 0
-        filament_int = int(filament) if filament else 0
-
-    if spool_int is not None and filament_int is not None:
+    if spool and filament:
+        # Convert string to int
+        spool_int = int(spool)
+        filament_int = int(filament)
         set_spool_and_filament(spool_int, filament_int)
+    else:
+        logger.info(
+            "Did not find spool and filament data in tag (%s)",
+            identifier,
+        )
 
 
 def on_nfc_no_tag_present() -> None:

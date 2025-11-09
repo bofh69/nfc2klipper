@@ -44,7 +44,7 @@ class Nfc2KlipperConfig:
 
     @classmethod
     def install_config(cls) -> None:
-        """ Copy the default config file to the right place """
+        """Copy the default config file to the right place"""
         cfg_dir: str = os.path.expanduser(Nfc2KlipperConfig.CFG_DIR)
         if not os.path.exists(cfg_dir):
             print(f"Creating dir {cfg_dir}", file=sys.stderr)
