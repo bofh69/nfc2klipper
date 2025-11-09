@@ -16,7 +16,7 @@ from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCServer
 from lib.moonraker_web_client import MoonrakerWebClient
 from lib.nfc_handler import NfcHandler
-from lib.nfc_parsers import NdefTextParser, TagIdentifierParser
+from lib.nfc_parsers import NdefTextParser, TagIdentifierParser, OpenPrintTagParser
 from lib.spoolman_client import SpoolmanClient
 
 Nfc2KlipperConfig.configure_logging()
@@ -91,9 +91,10 @@ last_spool_id: Optional[str] = None  # pylint: disable=C0103
 ipc_server: IPCServer = IPCServer(socket_path)
 
 # Create parsers for different tag formats
-# List of parsers to try in order - NDEF text parser first, then tag ID lookup
+# List of parsers to try in order - NDEF text parser first, OpenPrint3D, then tag ID lookup
 parsers: List[Any] = [
     NdefTextParser(),
+    OpenPrintTagParser(spoolman, args),
     TagIdentifierParser(spoolman),
 ]
 
