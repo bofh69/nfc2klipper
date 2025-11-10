@@ -37,6 +37,10 @@ Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID 
 
 ## Prepare for running nfc2klipper
 
+Install python >= 3.9.
+On some distributions you may need to install "python3-venv" or
+something similar.
+
 In the cloned repository's dir run:
 ```sh
 python3 -m venv venv
