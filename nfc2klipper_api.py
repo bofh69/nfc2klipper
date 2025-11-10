@@ -2,6 +2,13 @@
 
 # SPDX-FileCopyrightText: 2024-2025 Sebastian Andersson <sebastian@bittr.nu>
 # SPDX-License-Identifier: GPL-3.0-or-later
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "flask==3.0.3",
+#   "toml==0.10.2",
+# ]
+# ///
 
 """Web API service for nfc2klipper."""
 

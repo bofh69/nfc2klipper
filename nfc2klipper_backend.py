@@ -2,6 +2,14 @@
 
 # SPDX-FileCopyrightText: 2024-2025 Sebastian Andersson <sebastian@bittr.nu>
 # SPDX-License-Identifier: GPL-3.0-or-later
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "toml==0.10.2",
+#   "nfcpy==1.0.4",
+#   "requests==2.32.4",
+# ]
+# ///
 
 """Backend service for NFC handling and communication with Moonraker/Spoolman."""
 
