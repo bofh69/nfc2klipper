@@ -14,6 +14,8 @@ import ndef
 sys.path.insert(
     0, os.path.join(os.path.dirname(__file__), "..", "open_print_tag", "utils")
 )
+from record import Record
+from common import default_config_file
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -142,9 +144,9 @@ class TagIdentifierParser:
 
 
 class OpenPrintTagParser:
-    """Parser for OpenPrint3D format tags
+    """Parser for OpenPrintTag format tags
 
-    This parser reads tags using the OpenPrint3D format specification.
+    This parser reads tags using the OpenPrintTag format specification.
     It extracts material information from the tag and automatically creates
     vendor, filament, and spool entries in Spoolman with the NFC tag identifier.
 
@@ -225,8 +227,8 @@ class OpenPrintTagParser:
         self, ndef_data: Any, identifier: str
     ) -> Tuple[Optional[str], Optional[str]]:
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
-        # This method is complex due to the nature of parsing OpenPrint3D tags
-        """Parse OpenPrint3D tag data and create Spoolman entries
+        # This method is complex due to the nature of parsing OpenPrintTag tags
+        """Parse OpenPrintTag tag data and create Spoolman entries
 
         Args:
             ndef_data: NDEF data structure from the tag (can be None)
@@ -239,11 +241,7 @@ class OpenPrintTagParser:
             return None, None
 
         try:
-            # Import here to avoid import errors if the module is not available
-            from record import Record
-            from common import default_config_file
-
-            # Look for OpenPrint3D NDEF records
+            # Look for OpenPrintTag NDEF records
             for record in ndef_data.records:
                 if (
                     hasattr(record, "type")
@@ -327,7 +325,7 @@ class OpenPrintTagParser:
                                     color_hex = hex_str[:6]
 
                         logger.info(
-                            "Found OpenPrint3D tag: brand=%s, material=%s, type=%s",
+                            "Found OpenPrintTag tag: brand=%s, material=%s, type=%s",
                             brand_name,
                             filament_name,
                             material_type,
@@ -388,7 +386,7 @@ class OpenPrintTagParser:
                         spool_id = spool["id"]
 
                         logger.info(
-                            "Created spool_id=%s, filament_id=%s for OpenPrint3D tag",
+                            "Created spool_id=%s, filament_id=%s for OpenPrintTag tag",
                             spool_id,
                             filament_id,
                         )
@@ -396,11 +394,11 @@ class OpenPrintTagParser:
                         return str(spool_id), str(filament_id)
 
                     except Exception as ex:  # pylint: disable=broad-except
-                        logger.warning("Could not parse OpenPrint3D record: %s", ex)
+                        logger.warning("Could not parse OpenPrintTag record: %s", ex)
 
         except ImportError:
-            logger.debug("OpenPrint3D parsing libraries not available")
+            logger.debug("OpenPrintTag parsing libraries not available")
         except Exception as ex:  # pylint: disable=broad-except
-            logger.warning("Error parsing OpenPrint3D tag: %s", ex)
+            logger.warning("Error parsing OpenPrintTag tag: %s", ex)
 
         return None, None
