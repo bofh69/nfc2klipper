@@ -155,12 +155,10 @@ class EnumArrayField(EnumFieldBase):
 
 
 class BytesField(Field):
-    max_len: int | None
-
     def __init__(self, config, config_dir):
         super().__init__(config, config_dir)
         assert "max_length" in config, f"max_length not specified for '{config['name']}'"
-        self.max_len = config["max_length"]
+        self.max_len: int|None = config["max_length"]
 
     def decode(self, data):
         assert isinstance(data, bytes)
@@ -330,15 +328,13 @@ class Fields:
             if field_name in decoded_data:
                 continue
 
-            match field.required:
-                case False:
-                    pass
-
-                case True:
+            if field.required == False:
+                pass
+            elif field.required == True:
                     assert False, f"Missing required field '{field.name}'"
 
-                case "recommended":
-                    print(f"Missing recommended field '{field.name}'", file=sys.stderr)
+            elif field.required == "recommended":
+                print(f"Missing recommended field '{field.name}'", file=sys.stderr)
 
-                case _:
-                    assert False, f"Invalid field '{field.name}' 'required' value '{field.required}'"
+            else:
+                assert False, f"Invalid field '{field.name}' 'required' value '{field.required}'"

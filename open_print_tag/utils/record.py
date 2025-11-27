@@ -106,60 +106,16 @@ class Record:
             self.config = types.SimpleNamespace(**yaml.safe_load(f))
 
         # Decode the root and find payload
-        match self.config.root:
-            case "none":
-                self.payload = data
-                self.payload_offset = 0
+        if self.config.root == "none":
+            self.payload = data
+            self.payload_offset = 0
+        elif self.config.root == "nfcv":
+            data_io = io.BytesIO(data)
 
-            case "nfcv":
-                data_io = io.BytesIO(data)
-                cc = data_io.read(4)
-
-                # TODO: Support 8-byte CC (with a different magic)
-                assert cc[0] == 0xE1, "Capability container magic number does not match"
-
-                # Find the NDEF TLV
-                while True:
-                    base_tlv = data_io.read(2)
-                    tag = base_tlv[0]
-
-                    # Either gone out of range or hit a terminator TLV
-                    if (tag is None) or (tag == 0xFE):
-                        assert base_tlv is not None, "Did not found NDEF TLV"
-
-                    tlv_len = base_tlv[1]
-
-                    # 0xFF means that length takes two bytes
-                    if tlv_len == 0xFF:
-                        ext_len = data_io.read(2)
-                        assert ext_len is not None
-                        tlv_len = ext_len[0] * 256 | ext_len[1]
-
-                    # 0x03 = NDEF TLV
-                    if tag == 0x03:
-                        # Found it -
-                        break
-                    else:
-                        # Skip the TLV block
-                        data_io.seek(tlv_len, 1)
-
-                for record in ndef.message_decoder(data_io):
-                    if type(record) is ndef.UriRecord:
-                        self.uri = record.uri
-
-                    if record.type == self.config.mime_type:
-                        # We have to create a sub memoryview so that when we update the region, the outer data updates as well
-                        end = data_io.tell()
-                        self.payload_offset = end - len(record.data)
-                        self.payload = data[self.payload_offset : end]
-                        assert self.payload == record.data
-                        break
-
-                else:
-                    raise Exception(f"Did not find a record of type '{self.config.mime_type}'")
-
-            case _:
-                raise Exception(f"Unknown root type '{self.config.root}'")
+            self.payload_offset = 0
+            self.payload = data[:]
+        else:
+            raise Exception(f"Unknown root type '{self.config.root}'")
 
         assert type(self.payload) is memoryview
         self._setup_regions()
