@@ -210,6 +210,94 @@ class MockSpoolmanClient:
                 return True
         return False
 
+    def create_vendor(self, name: str) -> Dict[str, Any]:
+        """Create a vendor in mock data"""
+        logger.info("MockSpoolmanClient: create_vendor called with name=%s", name)
+        # In mock, just return a vendor dict
+        return {"id": 99, "name": name}
+
+    def get_vendor_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """Get vendor by name from mock data"""
+        logger.info("MockSpoolmanClient: get_vendor_by_name called with name=%s", name)
+        # Return mock vendor if it matches existing data
+        for spool in self.spools:
+            vendor_name = spool.get("filament", {}).get("vendor", {}).get("name", "")
+            if vendor_name.lower() == name.lower():
+                return {"id": 99, "name": vendor_name}
+        return None
+
+    def get_or_create_vendor(self, name: str) -> Dict[str, Any]:
+        """Get or create a vendor by name"""
+        logger.info("MockSpoolmanClient: get_or_create_vendor called with name=%s", name)
+        vendor = self.get_vendor_by_name(name)
+        if vendor:
+            return vendor
+        return self.create_vendor(name)
+
+    def find_filament_by_vendor_material_and_name(
+        self, vendor_id: int, material: str, name: str
+    ) -> Optional[Dict[str, Any]]:
+        """Find a filament by vendor ID, material, and name"""
+        logger.info(
+            "MockSpoolmanClient: find_filament_by_vendor_material_and_name called"
+        )
+        # Search through existing spools for matching filament
+        for spool in self.spools:
+            filament = spool.get("filament", {})
+            if (
+                filament.get("name", "").lower() == name.lower()
+                and str(material).lower() in filament.get("name", "").lower()
+            ):
+                return filament
+        return None
+
+    def get_or_create_filament(
+        self, vendor_id: int, material: str, name: str, filament_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Get existing filament or create a new one"""
+        logger.info(
+            "MockSpoolmanClient: get_or_create_filament called with name=%s, material=%s",
+            name,
+            material,
+        )
+        # Try to find existing filament
+        existing = self.find_filament_by_vendor_material_and_name(
+            vendor_id, material, name
+        )
+        if existing:
+            logger.info(
+                "MockSpoolmanClient: Found existing filament id=%s", existing.get("id")
+            )
+            return existing
+        # Create new filament if not found
+        return self.create_filament(filament_data)
+
+    def create_filament(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a filament in mock data"""
+        logger.info(
+            "MockSpoolmanClient: create_filament called with name=%s",
+            data.get("name"),
+        )
+        # Return mock filament
+        return {
+            "id": 100,
+            "name": data.get("name", "Mock Filament"),
+            "vendor_id": data.get("vendor_id", 99),
+        }
+
+    def create_spool(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a spool in mock data"""
+        logger.info(
+            "MockSpoolmanClient: create_spool called with filament_id=%s",
+            data.get("filament_id"),
+        )
+        # Return mock spool
+        return {
+            "id": 200,
+            "filament_id": data.get("filament_id"),
+            "extra": data.get("extra", {}),
+        }
+
 
 class MockMoonrakerWebClient:  # pylint: disable=R0903
     """Mock Moonraker Web Client for testing"""

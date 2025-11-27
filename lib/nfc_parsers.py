@@ -371,8 +371,10 @@ class OpenPrintTagParser:
                         if bed_temp is not None:
                             filament_data["bed_temp"] = bed_temp
 
-                        # Create filament
-                        filament = self.spoolman_client.create_filament(filament_data)
+                        # Get or create filament (reuse if same name, material, and vendor)
+                        filament = self.spoolman_client.get_or_create_filament(
+                            vendor_id, material_type or "PLA", filament_name, filament_data
+                        )
                         filament_id = filament["id"]
 
                         # Build spool data structure according to Spoolman API

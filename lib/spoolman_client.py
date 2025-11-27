@@ -115,6 +115,57 @@ class SpoolmanClient:
             return vendor
         return self.create_vendor(name)
 
+    def find_filament_by_vendor_material_and_name(
+        self, vendor_id: int, material: str, name: str
+    ) -> Optional[Dict[str, Any]]:
+        """Find a filament by vendor ID, material, and name
+
+        Args:
+            vendor_id: Vendor ID
+            material: Material type (e.g., PLA, PETG)
+            name: Filament name
+
+        Returns:
+            Filament dict if found, None otherwise
+        """
+        url: str = self.url + "/api/v1/filament"
+        params = {"vendor_id": vendor_id}
+        response = requests.get(url, params=params, timeout=10)
+        if response.status_code != 200:
+            return None
+
+        filaments: List[Dict[str, Any]] = response.json()
+        for filament in filaments:
+            if (
+                filament.get("name", "").lower() == name.lower()
+                and filament.get("material", "").lower() == material.lower()
+            ):
+                return filament
+        return None
+
+    def get_or_create_filament(
+        self, vendor_id: int, material: str, name: str, filament_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Get existing filament or create a new one
+
+        Args:
+            vendor_id: Vendor ID
+            material: Material type
+            name: Filament name
+            filament_data: Full filament data for creation if needed
+
+        Returns:
+            Filament dict with id
+        """
+        # Try to find existing filament
+        existing = self.find_filament_by_vendor_material_and_name(
+            vendor_id, material, name
+        )
+        if existing:
+            return existing
+        # Create new filament if not found
+        return self.create_filament(filament_data)
+
     def create_filament(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a filament in Spoolman with the given data"""
         url: str = self.url + "/api/v1/filament"
