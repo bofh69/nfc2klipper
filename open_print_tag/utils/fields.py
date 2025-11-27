@@ -105,7 +105,7 @@ class EnumFieldBase(Field):
         self.items_by_key = dict()
         self.items_by_name = dict()
 
-        self.items_yaml = yaml.safe_load(open(os.path.join(config_dir, config["items_file"]), "r"))
+        self.items_yaml = yaml.safe_load(open(os.path.join(config_dir, config["items_file"]), "r", encoding="utf-8"))
         for item in self.items_yaml:
             if item.get("deprecated", False):
                 continue
@@ -155,12 +155,10 @@ class EnumArrayField(EnumFieldBase):
 
 
 class BytesField(Field):
-    max_len: int | None
-
     def __init__(self, config, config_dir):
         super().__init__(config, config_dir)
         assert "max_length" in config, f"max_length not specified for '{config['name']}'"
-        self.max_len = config["max_length"]
+        self.max_len: int|None = config["max_length"]
 
     def decode(self, data):
         assert isinstance(data, bytes)
@@ -189,6 +187,15 @@ class BytesField(Field):
         return result
 
 
+class ColorRGBAField(BytesField):
+    def __init__(self, config, config_dir):
+        if "max_length" not in config:
+            # default to RGBA, but
+            # leave the door open for RGB or other formats in the future
+            config["max_length"] = 4
+        super().__init__(config, config_dir)
+
+
 class UUIDField(Field):
     def decode(self, data):
         return str(uuid.UUID(bytes=data))
@@ -206,6 +213,7 @@ field_types = {
     "enum_array": EnumArrayField,
     "timestamp": IntField,
     "bytes": BytesField,
+    "color_rgba": ColorRGBAField,
     "uuid": UUIDField,
 }
 
@@ -239,7 +247,7 @@ class Fields:
 
     def from_file(file: str):
         r = Fields()
-        r.init_from_yaml(yaml.safe_load(open(file, "r")), os.path.dirname(file))
+        r.init_from_yaml(yaml.safe_load(open(file, "r", encoding="utf-8")), os.path.dirname(file))
 
         return r
 
@@ -320,15 +328,13 @@ class Fields:
             if field_name in decoded_data:
                 continue
 
-            match field.required:
-                case False:
-                    pass
-
-                case True:
+            if field.required == False:
+                pass
+            elif field.required == True:
                     assert False, f"Missing required field '{field.name}'"
 
-                case "recommended":
-                    print(f"Missing recommended field '{field.name}'", file=sys.stderr)
+            elif field.required == "recommended":
+                print(f"Missing recommended field '{field.name}'", file=sys.stderr)
 
-                case _:
-                    assert False, f"Invalid field '{field.name}' 'required' value '{field.required}'"
+            else:
+                assert False, f"Invalid field '{field.name}' 'required' value '{field.required}'"

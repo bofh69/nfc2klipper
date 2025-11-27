@@ -87,3 +87,46 @@ class SpoolmanClient:
             raise ValueError(f"Request to spoolman failed: {response}: {response.text}")
 
         return True
+
+    def create_vendor(self, name: str) -> Dict[str, Any]:
+        """Create a vendor in Spoolman"""
+        url: str = self.url + "/api/v1/vendor"
+        response = requests.post(url, timeout=10, json={"name": name})
+        if response.status_code not in (200, 201):
+            raise ValueError(f"Request to spoolman failed: {response}: {response.text}")
+        return response.json()
+
+    def get_vendor_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """Get vendor by name"""
+        url: str = self.url + "/api/v1/vendor"
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            raise ValueError(f"Request to spoolman failed: {response}")
+        vendors: List[Dict[str, Any]] = response.json()
+        for vendor in vendors:
+            if vendor.get("name", "").lower() == name.lower():
+                return vendor
+        return None
+
+    def get_or_create_vendor(self, name: str) -> Dict[str, Any]:
+        """Get or create a vendor by name"""
+        vendor = self.get_vendor_by_name(name)
+        if vendor:
+            return vendor
+        return self.create_vendor(name)
+
+    def create_filament(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a filament in Spoolman with the given data"""
+        url: str = self.url + "/api/v1/filament"
+        response = requests.post(url, timeout=10, json=data)
+        if response.status_code not in (200, 201):
+            raise ValueError(f"Request to spoolman failed: {response}: {response.text}")
+        return response.json()
+
+    def create_spool(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a spool in Spoolman with the given data"""
+        url: str = self.url + "/api/v1/spool"
+        response = requests.post(url, timeout=10, json=data)
+        if response.status_code not in (200, 201):
+            raise ValueError(f"Request to spoolman failed: {response}: {response.text}")
+        return response.json()
