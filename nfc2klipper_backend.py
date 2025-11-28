@@ -40,10 +40,7 @@ parser.add_argument(
     "--config-dir",
     metavar="DIR",
     default=None,
-    help=(
-        f"Configuration directory (default: {Nfc2KlipperConfig.CFG_DIR}, "
-        f"fallback: {Nfc2KlipperConfig.LEGACY_CFG_DIR})"
-    ),
+    help=f"Configuration directory (default: {Nfc2KlipperConfig.CFG_DIR})",
 )
 parsed_args = parser.parse_args()
 
