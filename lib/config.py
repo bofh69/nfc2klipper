@@ -18,7 +18,8 @@ import toml  # pylint: disable=import-error
 class Nfc2KlipperConfig:
     """Class to handle configuration data for the application"""
 
-    CFG_DIR: str = "~/.config/nfc2klipper"
+    CFG_DIR: str = "~/printer_data/config"
+    LEGACY_CFG_DIR: str = "~/.config/nfc2klipper"
     DEFAULT_SOCKET_PATH: str = "~/nfc2klipper/nfc2klipper.sock"
 
     @classmethod
@@ -30,12 +31,24 @@ class Nfc2KlipperConfig:
         )
 
     @classmethod
-    def get_config(cls) -> Optional[Dict[str, Any]]:
+    def get_config(cls, config_dir: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Get the config data, or None if missing"""
-        for path in [
-            "~/nfc2klipper.cfg",
-            Nfc2KlipperConfig.CFG_DIR + "/nfc2klipper.cfg",
-        ]:
+        search_paths: List[str] = []
+
+        # If config_dir is specified, only search there
+        if config_dir:
+            search_paths.append(os.path.join(config_dir, "nfc2klipper.cfg"))
+        else:
+            # Search in default locations with new default first, then legacy
+            search_paths.extend(
+                [
+                    "~/nfc2klipper.cfg",
+                    Nfc2KlipperConfig.CFG_DIR + "/nfc2klipper.cfg",
+                    Nfc2KlipperConfig.LEGACY_CFG_DIR + "/nfc2klipper.cfg",
+                ]
+            )
+
+        for path in search_paths:
             cfg_filename: str = os.path.expanduser(path)
             if os.path.exists(cfg_filename):
                 with open(cfg_filename, "r", encoding="utf-8") as fp:
@@ -43,9 +56,11 @@ class Nfc2KlipperConfig:
         return None
 
     @classmethod
-    def install_config(cls) -> None:
+    def install_config(cls, config_dir: Optional[str] = None) -> None:
         """Copy the default config file to the right place"""
-        cfg_dir: str = os.path.expanduser(Nfc2KlipperConfig.CFG_DIR)
+        cfg_dir: str = os.path.expanduser(
+            config_dir if config_dir else Nfc2KlipperConfig.CFG_DIR
+        )
         if not os.path.exists(cfg_dir):
             print(f"Creating dir {cfg_dir}", file=sys.stderr)
             Path(cfg_dir).mkdir(parents=True, exist_ok=True)

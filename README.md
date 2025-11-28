@@ -47,7 +47,14 @@ python3 -m venv venv
 venv/bin/pip3 install -r requirements.txt
 ```
 
-Copy and update `nfc2klipper.cfg` to `~/.config/nfc2klipper/nfc2klipper.cfg`.
+Copy and update `nfc2klipper.cfg` to `~/printer_data/config/nfc2klipper.cfg`.
+
+For backwards compatibility, the configuration file will also be searched in `~/.config/nfc2klipper/nfc2klipper.cfg`.
+
+You can specify a custom configuration directory using the `-c` or `--config-dir` command-line option:
+```sh
+python3 nfc2klipper_backend.py -c /path/to/config/directory
+```
 
 ## Preparing Spoolman
 
@@ -200,7 +207,7 @@ the whole network.
 One can also start the file directly, but then it uses a development
 web server with **no security** at all (if enabled in the configuration file).
 
-The program uses the configuration file (`~/.config/nfc2klipper/nfc2klipper.cfg`) for
+The program uses the configuration file (`~/printer_data/config/nfc2klipper.cfg` or `~/.config/nfc2klipper/nfc2klipper.cfg` for legacy installations) for
 getting the unix domain name used to communicate with the `nfc2klipper_backend.py`.
 
 The web page lists the current spools in Spoolman.

@@ -13,6 +13,7 @@
 
 """Backend service for NFC handling and communication with Moonraker/Spoolman."""
 
+import argparse
 import logging
 import os
 import signal
@@ -30,14 +31,30 @@ from lib.spoolman_client import SpoolmanClient
 Nfc2KlipperConfig.configure_logging()
 logger: logging.Logger = logging.getLogger(__name__)
 
-args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config()
+# Parse command line arguments
+parser = argparse.ArgumentParser(
+    description="Backend service for NFC handling and communication with Moonraker/Spoolman."
+)
+parser.add_argument(
+    "-c",
+    "--config-dir",
+    metavar="DIR",
+    default=None,
+    help=(
+        f"Configuration directory (default: {Nfc2KlipperConfig.CFG_DIR}, "
+        f"fallback: {Nfc2KlipperConfig.LEGACY_CFG_DIR})"
+    ),
+)
+parsed_args = parser.parse_args()
+
+args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config(parsed_args.config_dir)
 
 if not args:
     print(
         "WARNING: The config file is missing, installing a default version.",
         file=sys.stderr,
     )
-    Nfc2KlipperConfig.install_config()
+    Nfc2KlipperConfig.install_config(parsed_args.config_dir)
     sys.exit(1)
 
 args: Dict[str, Any] = args
@@ -196,8 +213,8 @@ def on_nfc_tag_present(ndef_data: Any, identifier: str) -> None:
     spool: Optional[str] = None
     filament: Optional[str] = None
 
-    for parser in parsers:
-        spool_and_filament = parser.parse(ndef_data, identifier)
+    for tag_parser in parsers:
+        spool_and_filament = tag_parser.parse(ndef_data, identifier)
         if spool_and_filament:
             spool, filament = spool_and_filament
             if spool and filament:
