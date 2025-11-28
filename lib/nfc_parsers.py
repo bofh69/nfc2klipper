@@ -139,6 +139,7 @@ class OpenTag3DParser:
     """Parser for OpenTag3D format tags
 
     Parses tags following the OpenTag3D specification from https://opentag3d.info/spec
+    Based on OpenTag3D spec version 0.012
     Extracts manufacturer, material, color, and other filament data, then creates
     or matches entries in Spoolman.
     """
@@ -254,60 +255,53 @@ class OpenTag3DParser:
         """Parse OpenTag3D format data from tag octets
 
         Args:
-            octets: Raw bytes from the NFC tag
+            octets: Raw bytes from the NDEF record payload
 
         Returns:
             Dictionary with parsed data, or None if not a valid OpenTag3D tag
         """
-        # OpenTag3D data starts at offset 0x10 (16 bytes)
+        # OpenTag3D data starts at offset 0x00 (new spec v0.010+)
         # Check if we have enough data
-        if len(octets) < 0x62:  # Minimum size for core fields
+        if len(octets) < 0x64:  # Minimum size for core fields
             return None
 
-        # Check tag format "OT" at offset 0x10
-        tag_format = octets[0x10:0x12].decode("ascii", errors="ignore")
-        if tag_format != "OT":
-            return None
+        # Parse tag version (2 bytes, big endian) at offset 0x00
+        tag_version = int.from_bytes(octets[0x00:0x02], byteorder="big")
 
-        logger.debug("Found OpenTag3D format tag")
-
-        # Parse tag version (2 bytes, big endian)
-        tag_version = int.from_bytes(octets[0x12:0x14], byteorder="big")
-
-        # Parse manufacturer (16 bytes UTF-8)
-        manufacturer = octets[0x14:0x24].decode("utf-8", errors="ignore").rstrip("\x00")
-
-        # Parse base material (5 bytes UTF-8)
+        # Parse base material (5 bytes UTF-8) at offset 0x02
         material_base = (
-            octets[0x24:0x29].decode("utf-8", errors="ignore").rstrip("\x00")
+            octets[0x02:0x07].decode("utf-8", errors="ignore").rstrip("\x00")
         )
 
-        # Parse material modifiers (5 bytes UTF-8)
-        material_mod = octets[0x29:0x2E].decode("utf-8", errors="ignore").rstrip("\x00")
+        # Parse material modifiers (5 bytes UTF-8) at offset 0x07
+        material_mod = octets[0x07:0x0C].decode("utf-8", errors="ignore").rstrip("\x00")
 
-        # Parse color name (32 bytes UTF-8)
-        color_name = octets[0x2E:0x4E].decode("utf-8", errors="ignore").rstrip("\x00")
+        # Parse manufacturer (16 bytes UTF-8) at offset 0x1B
+        manufacturer = octets[0x1B:0x2B].decode("utf-8", errors="ignore").rstrip("\x00")
 
-        # Parse color 1 (4 bytes RGBA)
-        color_1_hex = self._parse_rgba_to_hex(octets, 0x4E)
+        # Parse color name (32 bytes UTF-8) at offset 0x2B
+        color_name = octets[0x2B:0x4B].decode("utf-8", errors="ignore").rstrip("\x00")
 
-        # Parse target diameter (2 bytes, µm)
-        target_diameter = int.from_bytes(octets[0x5A:0x5C], byteorder="big")
+        # Parse color 1 (4 bytes RGBA) at offset 0x4B
+        color_1_hex = self._parse_rgba_to_hex(octets, 0x4B)
+
+        # Parse target diameter (2 bytes, µm) at offset 0x5C
+        target_diameter = int.from_bytes(octets[0x5C:0x5E], byteorder="big")
         diameter_mm = target_diameter / 1000.0
 
-        # Parse target weight (2 bytes, grams)
-        target_weight = int.from_bytes(octets[0x5C:0x5E], byteorder="big")
+        # Parse target weight (2 bytes, grams) at offset 0x5E
+        target_weight = int.from_bytes(octets[0x5E:0x60], byteorder="big")
 
-        # Parse print temperature (1 byte, divided by 5)
-        print_temp_raw = octets[0x5E]
+        # Parse print temperature (1 byte, divided by 5) at offset 0x60
+        print_temp_raw = octets[0x60]
         print_temp = print_temp_raw * 5
 
-        # Parse bed temperature (1 byte, divided by 5)
-        bed_temp_raw = octets[0x5F]
+        # Parse bed temperature (1 byte, divided by 5) at offset 0x61
+        bed_temp_raw = octets[0x61]
         bed_temp = bed_temp_raw * 5
 
-        # Parse density (2 bytes, µg/cm³)
-        density_raw = int.from_bytes(octets[0x60:0x62], byteorder="big")
+        # Parse density (2 bytes, µg/cm³) at offset 0x62
+        density_raw = int.from_bytes(octets[0x62:0x64], byteorder="big")
         density = density_raw / 1000.0
 
         # Build material name
@@ -330,145 +324,150 @@ class OpenTag3DParser:
             "density": density,
         }
 
-        # Parse color 2 using helper method
-        color_2_hex = self._parse_rgba_to_hex(octets, 0x52)
+        # Parse color 2 at offset 0x50
+        color_2_hex = self._parse_rgba_to_hex(octets, 0x50)
         if color_2_hex:
             result["color_2_hex"] = color_2_hex
 
-        # Parse color 3 using helper method
-        color_3_hex = self._parse_rgba_to_hex(octets, 0x56)
+        # Parse color 3 at offset 0x54
+        color_3_hex = self._parse_rgba_to_hex(octets, 0x54)
         if color_3_hex:
             result["color_3_hex"] = color_3_hex
 
-        # Parse online data URL (32 bytes ASCII) at 0x6D
-        if len(octets) >= 0x6D + 32:
+        # Parse color 4 at offset 0x58
+        color_4_hex = self._parse_rgba_to_hex(octets, 0x58)
+        if color_4_hex:
+            result["color_4_hex"] = color_4_hex
+
+        # Parse online data URL (32 bytes ASCII) at 0x70
+        if len(octets) >= 0x70 + 32:
             online_url = (
-                octets[0x6D:0x8D].decode("ascii", errors="ignore").rstrip("\x00")
+                octets[0x70:0x90].decode("ascii", errors="ignore").rstrip("\x00")
             )
             if online_url:
                 result["online_data_url"] = online_url
 
         # Parse extended fields if available (NTAG215/216)
-        # Extended fields start at 0xA0
-        if len(octets) >= 0xA0 + 16:
-            # Parse serial number / batch ID (16 bytes UTF-8) at 0xA0
-            serial = octets[0xA0:0xB0].decode("utf-8", errors="ignore").rstrip("\x00")
+        # Extended fields start at 0x90
+        if len(octets) >= 0x90 + 16:
+            # Parse serial number / batch ID (16 bytes UTF-8) at 0x90
+            serial = octets[0x90:0xA0].decode("utf-8", errors="ignore").rstrip("\x00")
             if serial:
                 result["serial"] = serial
 
-        if len(octets) >= 0xB0 + 4:
-            # Parse manufacture date (4 bytes: year, year, month, day) at 0xB0
-            mfg_year = int.from_bytes(octets[0xB0:0xB2], byteorder="big")
-            mfg_month = octets[0xB2]
-            mfg_day = octets[0xB3]
+        if len(octets) >= 0xA0 + 4:
+            # Parse manufacture date (4 bytes: year, year, month, day) at 0xA0
+            mfg_year = int.from_bytes(octets[0xA0:0xA2], byteorder="big")
+            mfg_month = octets[0xA2]
+            mfg_day = octets[0xA3]
             if mfg_year > 0 and mfg_month > 0 and mfg_day > 0:
                 result["mfg_date"] = f"{mfg_year:04d}-{mfg_month:02d}-{mfg_day:02d}"
 
-        if len(octets) >= 0xB4 + 3:
-            # Parse manufacture time (3 bytes: hour, minute, second) at 0xB4
-            mfg_hour = octets[0xB4]
-            mfg_minute = octets[0xB5]
-            mfg_second = octets[0xB6]
+        if len(octets) >= 0xA4 + 3:
+            # Parse manufacture time (3 bytes: hour, minute, second) at 0xA4
+            mfg_hour = octets[0xA4]
+            mfg_minute = octets[0xA5]
+            mfg_second = octets[0xA6]
             if mfg_hour < 24 and mfg_minute < 60 and mfg_second < 60:
                 result["mfg_time"] = f"{mfg_hour:02d}:{mfg_minute:02d}:{mfg_second:02d}"
 
-        if len(octets) >= 0xB7 + 1:
-            # Parse spool core diameter (1 byte, mm) at 0xB7
-            spool_core_diameter = octets[0xB7]
+        if len(octets) >= 0xA7 + 1:
+            # Parse spool core diameter (1 byte, mm) at 0xA7
+            spool_core_diameter = octets[0xA7]
             if spool_core_diameter > 0:
                 result["spool_core_diameter"] = spool_core_diameter
 
-        if len(octets) >= 0xB8 + 1:
-            # Parse MFI temperature (1 byte, divided by 5) at 0xB8
-            mfi_temp_raw = octets[0xB8]
+        if len(octets) >= 0xA8 + 1:
+            # Parse MFI temperature (1 byte, divided by 5) at 0xA8
+            mfi_temp_raw = octets[0xA8]
             if mfi_temp_raw > 0:
                 result["mfi_temp"] = mfi_temp_raw * 5
 
-        if len(octets) >= 0xB9 + 1:
-            # Parse MFI load (1 byte, divided by 10) at 0xB9
-            mfi_load_raw = octets[0xB9]
+        if len(octets) >= 0xA9 + 1:
+            # Parse MFI load (1 byte, divided by 10) at 0xA9
+            mfi_load_raw = octets[0xA9]
             if mfi_load_raw > 0:
                 result["mfi_load"] = mfi_load_raw * 10
 
-        if len(octets) >= 0xBA + 1:
-            # Parse MFI value (1 byte, divided by 10) at 0xBA
-            mfi_value_raw = octets[0xBA]
+        if len(octets) >= 0xAA + 1:
+            # Parse MFI value (1 byte, divided by 10) at 0xAA
+            mfi_value_raw = octets[0xAA]
             if mfi_value_raw > 0:
                 result["mfi_value"] = mfi_value_raw / 10.0
 
-        if len(octets) >= 0xBB + 1:
-            # Parse measured tolerance (1 byte, µm) at 0xBB
-            measured_tolerance = octets[0xBB]
+        if len(octets) >= 0xAB + 1:
+            # Parse measured tolerance (1 byte, µm) at 0xAB
+            measured_tolerance = octets[0xAB]
             if measured_tolerance > 0:
                 result["measured_tolerance"] = measured_tolerance
 
-        if len(octets) >= 0xBC + 2:
-            # Parse empty spool weight (2 bytes, grams) at 0xBC
-            empty_spool_weight = int.from_bytes(octets[0xBC:0xBE], byteorder="big")
+        if len(octets) >= 0xAC + 2:
+            # Parse empty spool weight (2 bytes, grams) at 0xAC
+            empty_spool_weight = int.from_bytes(octets[0xAC:0xAE], byteorder="big")
             if 0 < empty_spool_weight < 65535:
                 result["empty_spool_weight"] = empty_spool_weight
 
-        if len(octets) >= 0xBE + 2:
-            # Parse measured filament weight (2 bytes, grams) at 0xBE
+        if len(octets) >= 0xAE + 2:
+            # Parse measured filament weight (2 bytes, grams) at 0xAE
             measured_filament_weight = int.from_bytes(
-                octets[0xBE:0xC0], byteorder="big"
+                octets[0xAE:0xB0], byteorder="big"
             )
             if 0 < measured_filament_weight < 65535:
                 result["measured_filament_weight"] = measured_filament_weight
 
-        if len(octets) >= 0xC0 + 2:
-            # Parse measured filament length (2 bytes, meters) at 0xC0
+        if len(octets) >= 0xB0 + 2:
+            # Parse measured filament length (2 bytes, meters) at 0xB0
             measured_filament_length = int.from_bytes(
-                octets[0xC0:0xC2], byteorder="big"
+                octets[0xB0:0xB2], byteorder="big"
             )
             if 0 < measured_filament_length < 65535:
                 result["measured_filament_length"] = measured_filament_length
 
-        if len(octets) >= 0xC2 + 2:
-            # Parse transmission distance (2 bytes, µm) at 0xC2
-            transmission_distance = int.from_bytes(octets[0xC2:0xC4], byteorder="big")
+        if len(octets) >= 0xB2 + 2:
+            # Parse transmission distance (2 bytes, µm) at 0xB2
+            transmission_distance = int.from_bytes(octets[0xB2:0xB4], byteorder="big")
             if 0 < transmission_distance < 65535:
                 result["transmission_distance"] = transmission_distance
 
-        if len(octets) >= 0xC4 + 1:
-            # Parse max dry temp (1 byte, divided by 5) at 0xC4
-            max_dry_temp_raw = octets[0xC4]
+        if len(octets) >= 0xB4 + 1:
+            # Parse max dry temp (1 byte, divided by 5) at 0xB4
+            max_dry_temp_raw = octets[0xB4]
             if max_dry_temp_raw > 0:
                 result["max_dry_temp"] = max_dry_temp_raw * 5
 
-        if len(octets) >= 0xC5 + 1:
-            # Parse dry time (1 byte, hours) at 0xC5
-            dry_time = octets[0xC5]
+        if len(octets) >= 0xB5 + 1:
+            # Parse dry time (1 byte, hours) at 0xB5
+            dry_time = octets[0xB5]
             if dry_time > 0:
                 result["dry_time"] = dry_time
 
-        if len(octets) >= 0xC6 + 1:
-            # Parse min print temp (1 byte, divided by 5) at 0xC6
-            min_print_temp_raw = octets[0xC6]
+        if len(octets) >= 0xB6 + 1:
+            # Parse min print temp (1 byte, divided by 5) at 0xB6
+            min_print_temp_raw = octets[0xB6]
             if min_print_temp_raw > 0:
                 result["min_print_temp"] = min_print_temp_raw * 5
 
-        if len(octets) >= 0xC7 + 1:
-            # Parse max print temp (1 byte, divided by 5) at 0xC7
-            max_print_temp_raw = octets[0xC7]
+        if len(octets) >= 0xB7 + 1:
+            # Parse max print temp (1 byte, divided by 5) at 0xB7
+            max_print_temp_raw = octets[0xB7]
             if max_print_temp_raw > 0:
                 result["max_print_temp"] = max_print_temp_raw * 5
 
-        if len(octets) >= 0xC8 + 1:
-            # Parse min volumetric speed (1 byte, mm³/s) at 0xC8
-            min_vso = octets[0xC8]
+        if len(octets) >= 0xB8 + 1:
+            # Parse min volumetric speed (1 byte, mm³/s) at 0xB8
+            min_vso = octets[0xB8]
             if min_vso > 0:
                 result["min_volumetric_speed"] = min_vso
 
-        if len(octets) >= 0xC9 + 1:
-            # Parse max volumetric speed (1 byte, mm³/s) at 0xC9
-            max_vso = octets[0xC9]
+        if len(octets) >= 0xB9 + 1:
+            # Parse max volumetric speed (1 byte, mm³/s) at 0xB9
+            max_vso = octets[0xB9]
             if max_vso > 0:
                 result["max_volumetric_speed"] = max_vso
 
-        if len(octets) >= 0xCA + 1:
-            # Parse target volumetric speed (1 byte, mm³/s) at 0xCA
-            target_vso = octets[0xCA]
+        if len(octets) >= 0xBA + 1:
+            # Parse target volumetric speed (1 byte, mm³/s) at 0xBA
+            target_vso = octets[0xBA]
             if target_vso > 0:
                 result["target_volumetric_speed"] = target_vso
 
@@ -490,17 +489,23 @@ class OpenTag3DParser:
         if ndef_data is None:
             return None, None
 
-        # Get raw octets from NDEF data
-        # OpenTag3D data is at offset 6 in the NDEF octets
+        # Look for the OpenTag3D NDEF record with MIME type "application/opentag3d"
         octets = None
-        if hasattr(ndef_data, "octets"):
-            try:
-                octets = ndef_data.octets[6:]
-            except (AttributeError, TypeError, IndexError) as ex:
-                logger.debug("Failed to get octets from ndef_data: %s", ex)
+        try:
+            if hasattr(ndef_data, "records"):
+                for record in ndef_data.records:
+                    # Check if this is an OpenTag3D MIME type record
+                    if hasattr(record, "type") and record.type == "application/opentag3d":
+                        # Get the payload data from the record
+                        if hasattr(record, "data"):
+                            octets = record.data
+                            logger.debug("Found OpenTag3D NDEF record")
+                            break
+        except (AttributeError, TypeError) as ex:
+            logger.debug("Failed to find OpenTag3D NDEF record: %s", ex)
 
         if octets is None:
-            logger.debug("Could not get raw octets from NDEF data")
+            logger.debug("Could not find OpenTag3D NDEF record")
             return None, None
 
         # Parse OpenTag3D data
@@ -558,6 +563,8 @@ class OpenTag3DParser:
                 multi_color_hexes.append(tag_data["color_2_hex"])
                 if "color_3_hex" in tag_data:
                     multi_color_hexes.append(tag_data["color_3_hex"])
+                    if "color_4_hex" in tag_data:
+                        multi_color_hexes.append(tag_data["color_4_hex"])
                 filament_data["multi_color_hexes"] = multi_color_hexes
 
             # Apply field mapping from config
