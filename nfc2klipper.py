@@ -5,6 +5,7 @@
 
 """Program to set current filament & spool in klipper, and write to tags."""
 
+import argparse
 import logging
 import os
 import signal
@@ -19,14 +20,33 @@ Nfc2KlipperConfig.configure_logging()
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config()
+# Parse command line arguments
+parser = argparse.ArgumentParser(
+    description="Program to set current filament & spool in klipper, and write to tags."
+)
+parser.add_argument(
+    "-c",
+    "--config-dir",
+    metavar="DIR",
+    default=None,
+    help=(
+        f"Configuration directory (default: {Nfc2KlipperConfig.CFG_DIR}, "
+        f"fallback: {Nfc2KlipperConfig.LEGACY_CFG_DIR})"
+    ),
+)
+parsed_args = parser.parse_args()
+
+args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config(parsed_args.config_dir)
 
 if not args:
     # Run the backend to handle initial config setup
     script_dir: str = os.path.dirname(os.path.abspath(__file__))
     backend_script: str = os.path.join(script_dir, "nfc2klipper_backend.py")
     try:
-        subprocess.run([sys.executable, backend_script], check=True)  # nosec
+        cmd = [sys.executable, backend_script]
+        if parsed_args.config_dir:
+            cmd.extend(["-c", parsed_args.config_dir])
+        subprocess.run(cmd, check=True)  # nosec
     except subprocess.CalledProcessError:
         pass  # Backend already logged the error
     sys.exit(1)
@@ -67,18 +87,22 @@ if __name__ == "__main__":
     if not args["webserver"].get("disable_web_server"):
         # Start backend in a separate process
         logger.info("Starting backend service")
-        backend_process = subprocess.Popen(  # pylint: disable=R1732
-            [sys.executable, backend_script]
-        )  # nosec
+        backend_cmd = [sys.executable, backend_script]
+        if parsed_args.config_dir:
+            backend_cmd.extend(["-c", parsed_args.config_dir])
+        # pylint: disable=consider-using-with
+        backend_process = subprocess.Popen(backend_cmd)  # nosec
 
         # Wait a moment for the backend to start
         time.sleep(2)
 
         logger.info("Starting web API service")
         try:
-            api_process = subprocess.Popen(  # pylint: disable=R1732
-                [sys.executable, api_script]
-            )  # nosec
+            api_cmd = [sys.executable, api_script]
+            if parsed_args.config_dir:
+                api_cmd.extend(["-c", parsed_args.config_dir])
+            # pylint: disable=consider-using-with
+            api_process = subprocess.Popen(api_cmd)  # nosec
 
             # Wait for both processes to end
             backend_process.wait()
@@ -87,4 +111,7 @@ if __name__ == "__main__":
             cleanup_processes(signal.SIGINT, None)
     else:
         # Just run the backend
-        subprocess.run([sys.executable, backend_script], check=True)  # nosec
+        cmd = [sys.executable, backend_script]
+        if parsed_args.config_dir:
+            cmd.extend(["-c", parsed_args.config_dir])
+        subprocess.run(cmd, check=True)  # nosec
