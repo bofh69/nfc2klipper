@@ -18,8 +18,7 @@ import toml  # pylint: disable=import-error
 class Nfc2KlipperConfig:
     """Class to handle configuration data for the application"""
 
-    CFG_DIR: str = "~/printer_data/config"
-    LEGACY_CFG_DIR: str = "~/.config/nfc2klipper"
+    CFG_DIR: str = "~/.config/nfc2klipper"
     DEFAULT_SOCKET_PATH: str = "~/nfc2klipper/nfc2klipper.sock"
 
     @classmethod
@@ -39,12 +38,11 @@ class Nfc2KlipperConfig:
         if config_dir:
             search_paths.append(os.path.join(config_dir, "nfc2klipper.cfg"))
         else:
-            # Search in default locations with new default first, then legacy
+            # Search in default locations
             search_paths.extend(
                 [
                     "~/nfc2klipper.cfg",
                     Nfc2KlipperConfig.CFG_DIR + "/nfc2klipper.cfg",
-                    Nfc2KlipperConfig.LEGACY_CFG_DIR + "/nfc2klipper.cfg",
                 ]
             )
 
