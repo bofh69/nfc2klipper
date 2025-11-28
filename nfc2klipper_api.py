@@ -27,6 +27,7 @@ from lib.ipc import IPCClient
 Nfc2KlipperConfig.configure_logging()
 
 # Parse command line arguments
+# pylint: disable=duplicate-code
 parser = argparse.ArgumentParser(description="Web API service for nfc2klipper.")
 parser.add_argument(
     "-c",
@@ -38,6 +39,7 @@ parser.add_argument(
 parsed_args = parser.parse_args()
 
 args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config(parsed_args.config_dir)
+# pylint: enable=duplicate-code
 
 if not args:
     print(

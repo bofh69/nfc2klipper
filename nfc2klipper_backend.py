@@ -32,6 +32,7 @@ Nfc2KlipperConfig.configure_logging()
 logger: logging.Logger = logging.getLogger(__name__)
 
 # Parse command line arguments
+# pylint: disable=duplicate-code
 parser = argparse.ArgumentParser(
     description="Backend service for NFC handling and communication with Moonraker/Spoolman."
 )
@@ -45,6 +46,7 @@ parser.add_argument(
 parsed_args = parser.parse_args()
 
 args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config(parsed_args.config_dir)
+# pylint: enable=duplicate-code
 
 if not args:
     print(
