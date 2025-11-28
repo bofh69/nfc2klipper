@@ -13,6 +13,7 @@ WantedBy=multi-user.target
 Type=simple
 User=pi
 RemainAfterExit=yes
+# Config directory defaults to ~/printer_data/config, or use -c to specify a custom location
 ExecStart= /home/pi/nfc2klipper/venv/bin/python3 /home/pi/nfc2klipper/nfc2klipper_backend.py
 Restart=always
 RestartSec=10
