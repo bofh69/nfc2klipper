@@ -559,8 +559,7 @@ class OpenTag3DParser:
 
             # Build multi_color_hexes if color_2_hex is present
             if "color_2_hex" in tag_data:
-                multi_color_hexes = [tag_data["color_hex"]]
-                multi_color_hexes.append(tag_data["color_2_hex"])
+                multi_color_hexes = [tag_data["color_hex"], tag_data["color_2_hex"]]
                 if "color_3_hex" in tag_data:
                     multi_color_hexes.append(tag_data["color_3_hex"])
                     if "color_4_hex" in tag_data:
