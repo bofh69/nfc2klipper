@@ -268,6 +268,16 @@ class OpenTag3DParser:
         # Parse tag version (2 bytes, big endian) at offset 0x00
         tag_version = int.from_bytes(octets[0x00:0x02], byteorder="big")
 
+        logger.debug(
+            "Parsing OpenTag3D version %d.%02d tag",
+            tag_version // 256,
+            tag_version % 256,
+        )
+
+        if tag_version < 0x000C:
+            # Too old, ignoring
+            return None
+
         # Parse base material (5 bytes UTF-8) at offset 0x02
         material_base = (
             octets[0x02:0x07].decode("utf-8", errors="ignore").rstrip("\x00")
@@ -495,12 +505,13 @@ class OpenTag3DParser:
             if hasattr(ndef_data, "records"):
                 for record in ndef_data.records:
                     # Check if this is an OpenTag3D MIME type record
-                    if hasattr(record, "type") and record.type == "application/opentag3d":
-                        # Get the payload data from the record
-                        if hasattr(record, "data"):
-                            octets = record.data
-                            logger.debug("Found OpenTag3D NDEF record")
-                            break
+                    if (
+                        hasattr(record, "type")
+                        and record.type == "application/opentag3d"
+                    ):
+                        octets = record.data
+                        logger.debug("Found OpenTag3D NDEF record")
+                        break
         except (AttributeError, TypeError) as ex:
             logger.debug("Failed to find OpenTag3D NDEF record: %s", ex)
 
@@ -520,6 +531,7 @@ class OpenTag3DParser:
             tag_data["material_name"],
             tag_data["color_name"],
         )
+        logger.debug("All data: %s", tag_data)
 
         # Generate filament name from template
         filament_name = self._generate_filament_name(tag_data)
@@ -596,11 +608,13 @@ class OpenTag3DParser:
             spool_data["extra"] = {}
         spool_data["extra"]["nfc_id"] = f'"{identifier.lower()}"'
 
-        # If remaining_weight wasn't set by mapping, use target_weight as fallback
         if "remaining_weight" not in spool_data:
-            spool_data["remaining_weight"] = tag_data.get("measured_weight", 0)
-            if "initial_weight" not in spool_data:
-                spool_data["initial_weight"] = tag_data.get("target_weight", 0)
+            if "measured_weight" in tag_data:
+                spool_data["remaining_weight"] = tag_data["measured_weight"]
+
+        if "initial_weight" not in spool_data:
+            if "target_weight" in tag_data:
+                spool_data["initial_weight"] = tag_data["target_weight"]
 
         spool_id = self.spoolman_client.create_spool(spool_data)
 
