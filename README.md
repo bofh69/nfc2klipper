@@ -25,12 +25,14 @@ Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID 
   - [Preparing tags](#preparing-tags)
     - [Using tag's id](#using-tags-id)
     - [SPOOL & FILAMENT in tags](#spool--filament-in-tags)
-      - [Write tags with the **experimental** web server](#write-tags-with-the-experimental-web-server)
+      - [Write tags with the web server](#write-tags-with-the-web-server)
       - [Write with an app](#write-with-an-app)
       - [Write with console application](#write-with-console-application)
   - [Run automatically with systemd](#run-automatically-with-systemd)
   - [Automatic upgrades with moonraker](#automatic-upgrades-with-moonraker)
-  - [Use with Happy-Hare](#user-with-happy-hare)
+  - [Use with Happy-Hare](#use-with-happy-hare)
+  - [Use with Prusa's OpenPrintTag tags](#use-with-prusas-openprinttag-tags)
+  - [Use with OpenTag3D tags](#use-with-opentag3d-tags)
   - [See also](#see-also)
   - [Developer info](#developer-info)
 
@@ -278,11 +280,16 @@ MMU_GATE_MAP NEXT_SPOOLID={spool}
 ```
 See Happy-Hare's [documentation](https://github.com/CooperGerman/Happy-Hare/wiki/Spoolman-Support#auto-setting-with-rfid-reader)
 
+## Use with Prusa's OpenPrintTag tags
+The PN532 reader can not read NFC type 5 tags. A newer reader, like PN5180, is needed, but there is limited python support for using it.
+That reader requires a SPI bus plus at least one more pin, preferably four more. I don't have that many pins free on my RPi.
+IF I add support for it, I will probably connect it to a RPi Pico instead and then connecting them to the computer via USB.
+
 ## Use with OpenTag3D tags
 (This is not tested with real tags. Please open an issue if it works or not).
 
 [OpenTag3d](https://opentag3d.info/) is a tag format containing info about the spool and filament.
-nfc2klipper can read the format, create vendor, filament and spool records in Spoolman from the tag's data.
+nfc2klipper can read the format (v0.12, possibly later), create vendor, filament and spool records in Spoolman from the tag's data.
 
 The Filament's name is by default generated from the tag's `material_base` `material_mod` and `color_name` fields.
 That can be changed in the configuration file.
