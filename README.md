@@ -53,7 +53,7 @@ Copy and update `nfc2klipper.cfg` to `~/.config/nfc2klipper/nfc2klipper.cfg`.
 
 You can specify a custom configuration directory using the `-c` or `--config-dir` command-line option:
 ```sh
-python3 nfc2klipper_backend.py -c /path/to/config/directory
+venv/bin/python3 nfc2klipper_backend.py -c /path/to/config/directory
 ```
 
 ## Preparing Spoolman
