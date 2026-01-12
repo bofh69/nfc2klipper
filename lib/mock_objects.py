@@ -14,10 +14,12 @@ from typing import Any, Callable, Dict, List, Optional
 
 import ndef  # pylint: disable=import-error
 
+from lib.nfc_interface import NfcInterface
+
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-class MockNfcHandler:
+class MockNfcHandler(NfcInterface):
     """Mock NFC Handler for testing"""
 
     def __init__(self, nfc_device: str) -> None:

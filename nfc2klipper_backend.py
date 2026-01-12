@@ -24,7 +24,8 @@ from typing import Any, Dict, List, Optional, Union
 from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCServer
 from lib.moonraker_web_client import MoonrakerWebClient
-from lib.nfc_handler import NfcHandler
+from lib.nfc_handler import create_nfc_handler
+from lib.nfc_interface import NfcInterface
 from lib.nfc_parsers import NdefTextParser, TagIdentifierParser
 from lib.opentag3d_parser import OpenTag3DParser
 from lib.spoolman_client import SpoolmanClient
@@ -43,6 +44,12 @@ parser.add_argument(
     metavar="DIR",
     default=None,
     help=f"Configuration directory (default: {Nfc2KlipperConfig.CFG_DIR})",
+)
+parser.add_argument(
+    "--nfc-implementation",
+    metavar="IMPL",
+    default="nfcpy",
+    help="NFC implementation to use (default: nfcpy). Currently only 'nfcpy' is supported.",
 )
 parsed_args = parser.parse_args()
 
@@ -97,9 +104,7 @@ if USE_MOCK_OBJECTS:
             clearing_gcode_template,
         )
     )
-    nfc_handler: Union[NfcHandler, "MockNfcHandler"] = MockNfcHandler(
-        args["nfc"]["nfc-device"]
-    )
+    nfc_handler: NfcInterface = MockNfcHandler(args["nfc"]["nfc-device"])
 else:
     spoolman = SpoolmanClient(args["spoolman"]["spoolman-url"])
     moonraker = MoonrakerWebClient(
@@ -107,7 +112,9 @@ else:
         setting_gcode_template,
         clearing_gcode_template,
     )
-    nfc_handler = NfcHandler(args["nfc"]["nfc-device"])
+    nfc_handler = create_nfc_handler(
+        args["nfc"]["nfc-device"], parsed_args.nfc_implementation
+    )
 
 last_nfc_id: Optional[str] = None  # pylint: disable=C0103
 last_spool_id: Optional[str] = None  # pylint: disable=C0103

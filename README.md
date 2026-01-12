@@ -56,6 +56,13 @@ You can specify a custom configuration directory using the `-c` or `--config-dir
 venv/bin/python3 nfc2klipper_backend.py -c /path/to/config/directory
 ```
 
+You can select a different NFC implementation using the `--nfc-implementation` command-line option:
+```sh
+venv/bin/python3 nfc2klipper_backend.py --nfc-implementation nfcpy
+```
+
+Currently, only the `nfcpy` implementation is supported (and is the default). The architecture supports adding additional implementations (such as `pn5180-tagomatic`) in the future.
+
 ## Preparing Spoolman
 
 nfc2klipper can use RFID/NFC tags containing its own format, but

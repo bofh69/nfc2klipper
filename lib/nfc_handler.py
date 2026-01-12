@@ -13,13 +13,14 @@ import nfc
 from nfc.clf import RemoteTarget
 
 from lib.nfc_parsers import SPOOL, FILAMENT
+from lib.nfc_interface import NfcInterface
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
-class NfcHandler:
-    """NFC Tag handling"""
+class NfcpyHandler(NfcInterface):
+    """NFC Tag handling using nfcpy library"""
 
     def __init__(self, nfc_device: str) -> None:
         self.status: str = ""
@@ -129,3 +130,26 @@ class NfcHandler:
                 identifier = "<undefined>"
 
             self.on_nfc_tag_present(tag.ndef, identifier)
+
+
+def create_nfc_handler(nfc_device: str, implementation: str = "nfcpy") -> NfcInterface:
+    """Factory function to create the appropriate NFC handler implementation.
+
+    Args:
+        nfc_device: Device path for the NFC reader
+        implementation: Name of the implementation to use (default: "nfcpy")
+
+    Returns:
+        An instance of NfcInterface
+
+    Raises:
+        ValueError: If the requested implementation is not supported
+    """
+    if implementation == "nfcpy":
+        return NfcpyHandler(nfc_device)
+
+    # Placeholder for future implementations like "pn5180-tagomatic"
+    raise ValueError(
+        f"Unknown NFC implementation: '{implementation}'. "
+        "Currently only 'nfcpy' is supported."
+    )
