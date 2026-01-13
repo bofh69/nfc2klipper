@@ -1,0 +1,486 @@
+- key: 0
+  name: instance_uuid
+  type: uuid
+  description:
+    - Unique identifier of the package instance.
+    - If not specified, can be deduced from `brand_uuid` + NFC tag UID.
+    - See _UUID_ section for more details.
+
+- key: 1
+  name: package_uuid
+  type: uuid
+  description:
+    - Universally unique identifier of the package (product)
+    - If not specified, can be deduced from `brand_uuid` + `gtin`.
+    - See _UUID_ section for more details.
+
+- key: 2
+  name: material_uuid
+  type: uuid
+  description:
+    - Universally unique identifier of the material.
+    - If not specified, can be deduced from `brand_uuid` + `material_name`.
+    - See _UUID_ section for more details.
+
+- key: 3
+  name: brand_uuid
+  type: uuid
+  description:
+    - Universally unique identifier of the brand
+    - If not specified, can be deduced from the `brand_name` string.
+    - See _UUID_ section for more details.
+
+- key: 4
+  name: gtin
+  type: number
+  required: recommended
+  description: Global Trade Item Number.
+
+- key: 5
+  name: brand_specific_instance_id
+  type: string
+  max_length: 16
+  description:
+    - Brand-specific identifier of the package instance.
+    - Not much use cases at this moment, possibly just for URL deduction
+
+- key: 6
+  name: brand_specific_package_id
+  type: string
+  max_length: 16
+  description:
+    - Brand-specific identifier of the package (product ID).
+    - Not much use cases at this moment, possibly just for URL deduction
+
+- key: 7
+  name: brand_specific_material_id
+  type: string
+  max_length: 16
+  description:
+    - Together with brand uniquely identifies each material.
+    - Not much use cases at this moment, possibly just for URL deduction.
+
+- key: 8
+  name: material_class
+  type: enum
+  required: true
+  example: FFF
+  items_file: material_class_enum.yaml
+  display_name_field: description
+
+- key: 9
+  name: material_type
+  type: enum
+  category: fff
+  items_file: material_type_enum.yaml
+  name_field: abbreviation
+  display_name_field: name
+  required: recommended
+  example: PC
+  description:
+    - Coarse classification of the material.
+    - Useful for determining default parameters for preheat an such that are not explicitly specified in the data.
+    - If the material does not match any of the proposed material types, can be left unspecified.
+
+- key: 10
+  name: material_name
+  type: string
+  max_length: 31
+  example: PC Blend Carbon Fiber Black
+  required: recommended
+  description:
+    - Brand-specific material display string/identifier.
+    - In the UI, brand_name + material_name should be displayed together, for example "Prusament PLA Galaxy Black".
+
+- key: 52
+  name: material_abbreviation
+  type: string
+  max_length: 7
+  example: PCCF
+  description:
+    - Abbreviation of the material name, for UI purposes (footers, dashboards, ...).
+    - If not present, the material inherits the abbreviation from the material type.
+
+- key: 11
+  name: brand_name
+  type: string
+  max_length: 31
+  required: recommended
+  description: Brand of the material.
+  example: Prusament
+
+- key: 12
+  deprecated: true
+
+- key: 13
+  name: write_protection
+  type: enum
+  items_file: write_protection_enum.yaml
+  description:
+    - Indicates whether the tag is write protected (everything except aux section, that one should be always writable).
+    - See the _Write protection_ section.
+
+- key: 14
+  name: manufactured_date
+  type: timestamp
+  required: recommended
+
+- key: 55
+  name: country_of_origin
+  type: string
+  max_length: 2
+  description: Country the [MaterialPackageInstance](terminology) was produced in, encoded as a two-letter code according to [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).
+
+- key: 15
+  name: expiration_date
+  type: timestamp
+
+- key: 16
+  name: nominal_netto_full_weight
+  required: recommended
+  type: number
+  unit: g
+  example: 1000
+  description:
+    - Nominal/advertised weight of the full package of the material, excluding the container.
+    - The actual netto weight of a specific package instance can slightly differ and is specified by `actual_netto_full_weight`.
+
+- key: 17
+  name: actual_netto_full_weight
+  required: recommended
+  type: number
+  unit: g
+  example: 1012
+  description:
+    - Actual weight of the full package of the material of this specific package instance, excluding the weight of the container.
+    - Can slightly differ from `nominal_netto_full_weight`.
+    - If not present, it is assumed to match `nominal_netto_full_weight`.
+
+- key: 53
+  name: nominal_full_length
+  category: fff
+  type: number
+  unit: mm
+  example: 350000
+  description:
+    - Nominal/advertised filament length of the full spool.
+    - The actual length of a specific package instance can slightly differ and is specified by `actual_full_length`
+
+- key: 54
+  name: actual_full_length
+  category: fff
+  type: number
+  unit: mm
+  example: 351000
+  description:
+    - Actual filament length of the full spool.
+    - Can slightly differ from `netto_full_length`.
+
+- key: 18
+  name: empty_container_weight
+  required: recommended
+  type: number
+  unit: g
+  description: Weight of the empty container.
+
+- key: 19
+  name: primary_color
+  type: color_rgba
+  required: recommended
+  example: "`\\xff\\x00\\x00\\x7f`"
+  description:
+    - Primary color of the material in the RGB(A) format, intended for UI purposes.
+    - The alpha channel can be left out, in which case the data should have 3 bytes instead of 4 and the color will be considered fully opaque.
+    - If a material doesn't have a single primary color (for example rainbow or coextruded filaments), this field can be null.
+
+- key: 20
+  name: secondary_color_0
+  type: color_rgba
+  description:
+    - One of secondary colors of the material.
+    - Data format is the same as for `primary_color`.
+
+- key: 21
+  name: secondary_color_1
+  type: color_rgba
+  description: See `secondary_color_0`.
+
+- key: 22
+  name: secondary_color_2
+  type: color_rgba
+  description: See `secondary_color_0`.
+
+- key: 23
+  name: secondary_color_3
+  type: color_rgba
+  description: See `secondary_color_0`.
+
+- key: 24
+  name: secondary_color_4
+  type: color_rgba
+  description: See `secondary_color_0`.
+
+- key: 25
+  deprecated: true
+
+- key: 26
+  deprecated: true
+
+- key: 27
+  name: transmission_distance
+  type: number
+  example: 6.6
+  unit: HueForge TD
+  description:
+    - Transmission Distance is a number representing material opacity.
+    - Value ranges from 0.1 (least transparent/most opaque) to 100 (most transparent/least opaque).
+    - See [Prusa TD values](https://help.prusa3d.com/article/hueforge-filament-transparency-values-and-hexcodes_762314) or [HueForge website](https://shop.thehueforge.com/blogs/news/what-is-hueforge).
+
+- key: 28
+  name: tags
+  type: enum_array
+  max_length: 16
+  items_file: tags_enum.yaml
+  example: "glitter + dual_color"
+  required: recommended
+  description: Properties of the material. Can have multiple tags at once.
+
+- key: 56
+  name: certifications
+  type: enum_array
+  max_length: 8
+  items_file: material_certifications_enum.yaml
+  example: "`ul_2818`"
+  description: Certifications the material has.
+
+- key: 29
+  name: density
+  type: number
+  unit: g/cm³ (1 g/cm³ = 0.001 g/mm³ = 1000 kg/m³)
+  example: 1.24
+  required: recommended
+  description: Density of the material.
+
+- key: 30
+  name: filament_diameter
+  type: number
+  unit: mm
+  example: 2.75
+  category: fff
+  description:
+    - Diameter of the filament, in mm.
+    - If not present, 1.75 mm is assumed.
+
+# Removed 18
+
+# Removed 19
+
+- key: 31
+  name: shore_hardness_a
+  type: int
+  example: 95
+  category: fff
+  description:
+    - Hardness of the material on the Shore A hardness scale (suitable for softer materials).
+    - "**Note:** There is no 1:1 mapping between A and D scales, different materials can have different values on one scale even though they are the same on the other."
+
+- key: 32
+  name: shore_hardness_d
+  type: int
+  example: 30
+  category: fff
+  description:
+    - Hardness of the material on the Shore D hardness scale (suitable for harder materials).
+    - "**Note:** There is no 1:1 mapping between A and D scales, different materials can have different values on one scale even though they are the same on the other."
+
+- key: 33
+  name: min_nozzle_diameter
+  type: number
+  example: 0.4
+  unit: mm
+  category: fff
+  description:
+    - Filaments can contain particles that would clog smaller nozzles.
+    - This field specifies minimum nozzle diameter recommended for printing this material.
+
+- key: 34
+  name: min_print_temperature
+  type: int
+  unit: °C
+  example: 205
+  required: recommended
+  category: fff
+  description:
+    - Minimum recommended nozzle temperature for printing.
+    - Also used for loading the filament to the nozzle.
+
+- key: 35
+  name: max_print_temperature
+  type: int
+  unit: °C
+  example: 225
+  required: recommended
+  category: fff
+  description:
+    - Maximum recommended nozzle temperature for printing.
+    - Also used for loading the filament to the nozzle.
+
+- key: 36
+  name: preheat_temperature
+  type: int
+  unit: °C
+  example: 170
+  category: fff
+  required: recommended
+  description:
+    - Recommended nozzle temperature for preheating/load cell bed leveling.
+    - Should be large enough for the material to get soft, but not low enough for it no to drip out of the nozzle.
+
+- key: 37
+  name: min_bed_temperature
+  type: int
+  unit: °C
+  example: 60
+  category: fff
+  required: recommended
+  description:
+    - Minimum recommended heatbed temperature.
+
+- key: 38
+  name: max_bed_temperature
+  type: int
+  unit: °C
+  example: 60
+  category: fff
+  required: recommended
+  description:
+    - Maximum recommended heatbed temperature.
+
+- key: 39
+  name: min_chamber_temperature
+  type: int
+  unit: °C
+  example: 10
+  category: fff
+  description:
+    - Minimum recommended temperature of the chamber.
+
+- key: 40
+  name: max_chamber_temperature
+  type: int
+  unit: °C
+  example: 50
+  category: fff
+  description:
+    - Maximum recommended temperature of the chamber.
+
+- key: 41
+  name: chamber_temperature
+  type: int
+  unit: °C
+  example: 20
+  category: fff
+  description:
+    - Ideal chamber temperature for printing.
+
+- key: 42
+  name: container_width
+  type: int
+  unit: mm
+  example: 75
+  category: fff
+  description:
+    - Width of the filament spool. Can be useful to know for spool holders, dry boxes and such.
+
+- key: 43
+  name: container_outer_diameter
+  type: int
+  unit: mm
+  example: 200
+  category: fff
+  description:
+    - Diameter of the spool. Can be useful to know for spool holders, dry boxes and such.
+
+- key: 44
+  name: container_inner_diameter
+  type: int
+  unit: mm
+  example: 100
+  category: fff
+  description:
+    - Diameter of the inner cylinder the filament is spooled once.
+    - Equals to the minimum diameter of the filament winding.
+
+- key: 45
+  name: container_hole_diameter
+  type: int
+  unit: mm
+  example: 52
+  category: fff
+  description:
+    - Diameter of the center hole of the spool.
+
+- key: 46
+  name: viscosity_18c
+  type: number
+  unit: mPa·s
+  description: Viscosity of the material at 18 °C.
+  category: sla
+
+- key: 47
+  name: viscosity_25c
+  type: number
+  unit: mPa·s
+  description: Viscosity of the material at 25 °C.
+  category: sla
+  example: 80
+
+- key: 48
+  name: viscosity_40c
+  type: number
+  unit: mPa·s
+  description: Viscosity of the material at 40 °C.
+  category: sla
+
+- key: 49
+  name: viscosity_60c
+  type: number
+  unit: mPa·s
+  description: Viscosity of the material at 60 °C.
+  category: sla
+
+- key: 50
+  name: container_volumetric_capacity
+  type: number
+  unit: ml (cm³)
+  category: sla
+  description: Maximum amount of material the container can hold.
+
+- key: 51
+  name: cure_wavelength
+  type: int
+  unit: nm
+  example: 405
+  category: sla
+  description:
+    - Wavelength of the light the material has been designed to be cured with.
+
+- key: 57
+  name: drying_temperature
+  type: int
+  unit: °C
+  example: 45
+  category: fff
+  description:
+    - Recommended ambient temperature for drying.
+
+- key: 58
+  name: drying_time
+  type: int
+  unit: min
+  example: 480
+  category: fff
+  description:
+    - Recommended drying time (at `drying_temperature`).
+
+# First unused key: 59

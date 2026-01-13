@@ -1,0 +1,31 @@
+- key: 0
+  name: main_region_offset
+  type: int
+  unit: bytes
+  description:
+    - Offset of the main region, relative to the NDEF payload start.
+    - If not specified, the main region immediately follows the meta section.
+
+- key: 1
+  name: main_region_size
+  type: int
+  unit: bytes
+  description:
+    - Allocation size of the main region.
+    - If not specified, the region spans till the next region or payload end.
+
+- key: 2
+  name: aux_region_offset
+  type: int
+  unit: bytes
+  description:
+    - Offset of the auxiliary region, relative to the NDEF payload start.
+    - Omitting this field means that the auxiliary region is not present.
+
+- key: 3
+  name: aux_region_size
+  type: int
+  unit: bytes
+  description:
+    - Allocation size of the auxiliary region.
+    - If not specified, the region (if present) spans till the next region or payload end.
