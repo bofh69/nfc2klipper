@@ -235,9 +235,21 @@ class PN5180Handler(NfcInterface):
 
             # pylint: disable=fixme
             # TODO: Read memory and parse NDEF
-            # mem = card.read_memory()
+            mem = b""
+            try:
+                offset = 0
+                while True:
+                    chunk = card.read_memory(offset // 4, 64)
+                    # print(f"Read {len(chunk)}")
+                    offset += len(chunk)
+                    mem += chunk
+            except TimeoutError:
+                pass
 
-            self._on_nfc_tag_present(None, identifier)
+            # print(f"Decoding:\nLEN: {len(mem)}\n{mem.hex(' ')}")
+            # print(mem)
+
+            self._on_nfc_tag_present(mem, identifier)
 
 
 def create_nfc_handler(nfc_device: str, implementation: str = "nfcpy") -> NfcInterface:
