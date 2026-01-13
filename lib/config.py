@@ -143,3 +143,46 @@ class Nfc2KlipperConfig:
             "remaining_weight": "measured_filament_weight",
             "lot_nr": "serial",
         }
+
+    @classmethod
+    def get_openprinttag_filament_name_template(cls, config: Dict[str, Any]) -> str:
+        """Get OpenPrintTag filament name template from config, or default value"""
+
+        openprinttag_config: Optional[Dict[str, Any]] = config.get("openprinttag")
+        template: Optional[str] = None
+        if openprinttag_config:
+            template = openprinttag_config.get("filament_name_template")
+        if not template:
+            # Default template:
+            template = "{material_name}"
+        return template
+
+    @classmethod
+    def get_openprinttag_filament_field_mapping(
+        cls, config: Dict[str, Any]
+    ) -> Dict[str, str]:
+        """Get OpenPrintTag to Spoolman filament field mapping from config"""
+
+        openprinttag_config: Optional[Dict[str, Any]] = config.get("openprinttag")
+        if openprinttag_config:
+            mapping = openprinttag_config.get("filament_field_mapping", {})
+            if mapping:
+                return mapping
+
+        # Default mapping
+        return {}
+
+    @classmethod
+    def get_openprinttag_spool_field_mapping(
+        cls, config: Dict[str, Any]
+    ) -> Dict[str, str]:
+        """Get OpenPrintTag to Spoolman spool field mapping from config"""
+
+        openprinttag_config: Optional[Dict[str, Any]] = config.get("openprinttag")
+        if openprinttag_config:
+            mapping = openprinttag_config.get("spool_field_mapping", {})
+            if mapping:
+                return mapping
+
+        # Default mapping
+        return {}

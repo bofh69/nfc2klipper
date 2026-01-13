@@ -323,21 +323,57 @@ MMU_GATE_MAP NEXT_SPOOLID={spool}
 See Happy-Hare's [documentation](https://github.com/CooperGerman/Happy-Hare/wiki/Spoolman-Support#auto-setting-with-rfid-reader)
 
 ## Use with Prusa's OpenPrintTag tags
-The PN532 reader can not read NFC type 5 tags. A newer reader, like PN5180, is needed, but there is limited python support for using it.
-That reader requires a SPI bus plus at least one more pin, preferably four more. I don't have that many pins free on my RPi.
-IF I add support for it, I will probably connect it to a RPi Pico instead and then connecting them to the computer via USB.
+
+[OpenPrintTag](https://openprinttag.org/) is a format containing info
+about the spool, its filament and the vendor.
+
+Unfortunatly OpenPrintTag uses NFC Type-V tags that can't be read by
+PN532 readers. A PN5180 reader is needed for them.
+
+When nfc2klipper reads an OpenPrintTag, it first checks if its ID is already in
+Spoolman. If so, that spool is used. This means that if a tag is reused, its old
+spool should first be archived in Spoolman (or simply empty its nfc_id field first),
+otherwise the tag will still match the old Spool in spoolman.
+
+If the ID can't be found in Spoolman, the tags' fields are used to create
+(if needed), a new Vendor, Filament and Spool in Spoolman. The Spool's 'nfc_id' extra
+field will be filled with the tag's ID.
+
+The filaments name is taken from the tags "material_name" field
+(Prusament uses names like "PLA Lipstick Red"), but what fields are used
+can be changed in the configuration file.
+
+There is a default mapping between the tag's fields and fields in Spoolman,
+but that can be changed with the configuration file. Fields that are not part
+of the standard fields in Spoolman can be put in extra fields. They need to be
+configured first in Spoolman.
+
+See Spoolman's API documentation [here](https://donkie.github.io/Spoolman/)
+to see the names of the fields in Spoolman.
+
+You can also add extra fields in Spoolman for saving more of the data
+from the OpenPrintTag tags.
+
+See the log file for the field names when a new OpenPrintTag tag is read.
+
 
 ## Use with OpenTag3D tags
 (This is not tested with real tags. Please open an issue if it works or not).
 
 [OpenTag3d](https://opentag3d.info/) is a tag format containing info about the spool and filament.
-nfc2klipper can read the format (v0.12, possibly later), create vendor, filament and spool records in Spoolman from the tag's data.
+nfc2klipper can read the format (v0.12, possibly later), create vendor,
+filament and spool records in Spoolman from the tag's data.
+
+When nfc2klipper reads an OpenTag3D, it first checks if its ID is already in
+Spoolman. If so, that spool is used. This means that if a tag is reused, its old
+spool should first be archived in Spoolman (or simply empty its nfc_id field first),
+otherwise the tag will still match the old Spool in spoolman.
 
 The Filament's name is by default generated from the tag's `material_base` `material_mod` and `color_name` fields.
 That can be changed in the configuration file.
 
-The created spools and filaments in spoolman gets the data from the tag. Which tag's data field should end up in which spoolman field
-is also configurable.
+The created spools and filaments in spoolman gets the data from the tag.
+Which tag's data field should end up in which spoolman field is also configurable.
 
 See Spoolman's API documentation [here](https://donkie.github.io/Spoolman/) to see the names of the fields in Spoolman.
 You can also add extra fields in Spoolman for saving more of the data from the OpenTag3D tags.
