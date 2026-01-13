@@ -19,7 +19,9 @@ Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID 
 - Table of Contents
   - [Prepare for running nfc2klipper](#prepare-for-running-nfc2klipper)
   - [Preparing an NFC reader](#preparing-an-nfc-reader)
-    - [PN532 bug in the nfcpy module](#pn532-bug-in-the-nfcpy-module)
+    - [Using PN532](#using-pn532)
+      - [PN532 bug in the nfcpy module](#pn532-bug-in-the-nfcpy-module)
+    - [Using PN5180](#using-pn5180)
   - [Preparing klipper](#preparing-klipper)
   - [Preparing the slicer](#preparing-the-slicer)
   - [Preparing tags](#preparing-tags)
@@ -56,13 +58,6 @@ You can specify a custom configuration directory using the `-c` or `--config-dir
 venv/bin/python3 nfc2klipper_backend.py -c /path/to/config/directory
 ```
 
-You can select a different NFC implementation using the `--nfc-implementation` command-line option:
-```sh
-venv/bin/python3 nfc2klipper_backend.py --nfc-implementation nfcpy
-```
-
-Currently, only the `nfcpy` implementation is supported (and is the default). The architecture supports adding additional implementations (such as `pn5180-tagomatic`) in the future.
-
 ## Preparing Spoolman
 
 nfc2klipper can use RFID/NFC tags containing its own format, but
@@ -76,10 +71,24 @@ settings -> extra fields -> spool.
 
 ## Preparing an NFC reader
 
-I use a PN532 based reader (Elechouse PN532 NFC RFID Module V3, if you
-want to use the same) connected via UART to the raspberry pi where this
-program is running.
+At least two different readers can be used:
 
+- PN532, using [nfcpy](https://nfcpy.readthedocs.io/en/latest/), connected via UART/serial.
+- PN5180 using [PN5180-Tagomatic](https://github.com/bofh69/pn5180-tagomatic), connected via USB.
+
+nfcpy supports many other readers too, which probably works fine, but
+I've not tested them.
+
+### Using PN532
+
+PN532 is well tested, but it can't read NFC type-V tags,
+used by OpenPrintTag. If you want to use those,
+use a PN5180 reader instead.
+
+I use a "Elechouse PN532 NFC RFID Module V3" board connected via UART
+to the raspberry pi where this program is running. The program uses
+nfcpy which supports many other readers too, it might work with them
+too, but I've not tested them.
 
 Many pages suggest connecting its VCC pin to 5V on the RPi. Don't!
 It can run from 3.3V and then it won't risk slowly destroying the RPi's
@@ -95,7 +104,7 @@ There is a model for attaching it to the printer
 [here](https://www.printables.com/model/798929-elechouse-pn532-v3-nfc-holder-for-voron-for-spoolm).
 
 
-### PN532 bug in the nfcpy module
+#### PN532 bug in the nfcpy module
 
 When running it on a raspberry pi's mini-uart (ttyS0 as device), it works fine.
 When using the other UART (ttyAMA0), I can only run the programs once.
@@ -123,6 +132,28 @@ There is an included patch file that can be applied:
 ```sh
 patch -p6 venv/lib/python3.*/site-packages/nfc/clf/pn532.py < pn532.py.patch
 ```
+
+### Using PN5180
+
+The PN5180 reader chip is much better than PN532, it can communicate
+with a lot more chips. The driver however is limited right now and
+not as well tested as nfcpy.
+
+The driver can only read NFC type 2 and V tags. That should be enough
+for the tags I use, including OpenTag3D and OpenPrintTag tags.
+
+The PN5180 is connected to a Raspberry Pi Pico Zero card and it is
+connected via USB to the computer. See the link above for how to
+put it together.
+
+In the nfc2klipper.cfg file's "nfc" section, use "pn5180" as
+"nfc-reader" and set "nfc-device" to
+"/dev/serial/by-id/usb-Arduino_RaspberryPi_Pico_053444501C6F7A80-if00",
+(but obviously change the serial number part to yours).
+
+One thing that isn't supported, is writing to tags. That was the
+first method used by nfc2klipper, but the newer method of storing
+the tags' ID number in Spoolman is a better method.
 
 
 ## Preparing klipper
@@ -152,16 +183,17 @@ This can be done automatically by using [spoolman2slicer](https://github.com/bof
 
 ## Preparing tags
 
-Tags can either contain custom data for nfc2klipper, or the tags'
-id can be used to lookup the spool in Spoolman.
+If nfc2klipper reads a new [OpenTag3D](#use-with-opentag3d-tags)
+tag, it will automatically create a new spool in Spoolman and connect
+it with the tag.
 
-The first method allows the system to work even if spoolman isn't
-working for the moment, but without Spoolman it might be of limited value.
+If you have your own tags, you can either
+[write custom data](#spool--filament-in-tags) to them, or
+[connect their ID](#using-tags-id) to the Spool in Spoolman.
 
 The second method allows nfc2klipper to be used with
 [FilaMan](https://github.com/ManuelW77/Filaman) and with manufacturers'
-tags of different formats.
-
+tags of different formats without changing them. It is now the recommended way of using nfc2klipper.
 
 ## Runing the backend
 
@@ -232,6 +264,9 @@ to the tags.
 
 
 #### Write with console application
+
+This is no longer recommended and the program will be
+removed in the future.
 
 The `write_tags.py` program fetches Spoolman's spools, shows a simple
 text interface where the spool can be chosen, and when pressing return,
@@ -305,7 +340,7 @@ The created spools and filaments in spoolman gets the data from the tag. Which t
 is also configurable.
 
 See Spoolman's API documentation [here](https://donkie.github.io/Spoolman/) to see the names of the fields in Spoolman.
-You can also add extra fields in Spoolman for saving the data from the OpenTag3D tags.
+You can also add extra fields in Spoolman for saving more of the data from the OpenTag3D tags.
 
 
 ## See also
