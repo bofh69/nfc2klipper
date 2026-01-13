@@ -5,12 +5,13 @@ import inspect
 import itertools
 import uuid
 import re
+import typing
 
 from record import Record
 from common import default_config_file
 
 
-def opt_check(rec: Record, tag_uid: bytes = None):
+def opt_check(rec: Record, tag_uid: typing.Optional[bytes] = None):
     warnings = list()
     errors = list()
     notes = list()
@@ -18,6 +19,7 @@ def opt_check(rec: Record, tag_uid: bytes = None):
 
     # Pass empty dict to out_unknown_fields so that the script does not crash if the tag has unkown fields
     # Unknown fields should by reported by rec_info --validate
+    assert rec.main_region is not None
     main_data = rec.main_region.read(out_unknown_fields={})
 
     # Aux region checks
@@ -29,21 +31,21 @@ def opt_check(rec: Record, tag_uid: bytes = None):
 
     # Check tag transitivities
     data_tags = main_data.get("tags", [])
-    for tag_data in rec.main_region.fields.fields_by_name["tags"].items_yaml:
-        if tag_data.get("deprecated", False):
+    for tag_data in rec.main_region.fields.fields_by_name["tags"].items_yaml:  # type: ignore[attr-defined,union-attr]
+        if tag_data.get("deprecated", False):  # type: ignore[attr-defined]
             continue
 
-        tag_name = tag_data["name"]
+        tag_name = tag_data["name"]  # type: ignore[index]
         if tag_name not in data_tags:
             # We don't have this tag, no problem
             continue
 
-        for implication in tag_data.get("implies", []):
+        for implication in tag_data.get("implies", []):  # type: ignore[attr-defined]
             if implication not in data_tags:
                 # Not an error, just a warning - if the data is older, the implied tag might not have existed
                 warnings.append(f"Tag '{tag_name}' present but implied tag '{implication}' not")
 
-        for hint in tag_data.get("hints", []):
+        for hint in tag_data.get("hints", []):  # type: ignore[attr-defined]
             if hint not in data_tags:
                 notes.append(f"Consider adding tag '{hint}' (hinted by '{tag_name}')")
 

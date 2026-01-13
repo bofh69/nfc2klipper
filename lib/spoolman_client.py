@@ -137,7 +137,7 @@ class SpoolmanClient:
         """
         try:
             url: str = self.url + "/api/v1/vendor"
-            data = {"name": name}
+            data: Dict[str, Any] = {"name": name}
             if empty_spool_weight:
                 data["empty_spool_weight"] = empty_spool_weight
             response = requests.post(url, json=data, timeout=10)

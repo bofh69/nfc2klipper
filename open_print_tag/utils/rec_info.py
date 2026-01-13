@@ -1,8 +1,9 @@
 import argparse
 import sys
 import yaml
+import typing
 
-from record import Record
+from record import Record, Region
 from common import default_config_file
 from opt_check import opt_check
 from pathlib import Path
@@ -46,7 +47,8 @@ else:
     data = bytearray(data)
 
 record = Record(args.config_file, memoryview(data))
-output = {}
+assert record.regions is not None
+output: typing.Dict[str, typing.Any] = {}
 return_fail = False
 
 if args.show_region_info or args.show_root_info:
@@ -79,7 +81,7 @@ if args.show_data:
         if name == "meta" and not args.show_meta:
             continue
 
-        region_unknown_fields = dict()
+        region_unknown_fields: typing.Dict[typing.Any, typing.Any] = dict()
         data[name] = region.read(out_unknown_fields=region_unknown_fields)
 
         if len(region_unknown_fields) > 0:
@@ -100,7 +102,8 @@ if args.show_raw_data:
     output["raw_data"] = data
 
 if args.show_uri:
-    output["uri"] = record.uri
+    if record.uri is not None:
+        output["uri"] = record.uri
 
 if args.validate or args.opt_check:
     validate_result = record.validate()
@@ -114,15 +117,16 @@ if args.extra_required_fields:
         req_fields = yaml.safe_load(f)
 
     for region_name, region_req_fields in req_fields.items():
-        region = record.regions.get(region_name)
-        assert region, f"Missing region {region_name}"
+        req_region: typing.Optional[Region] = record.regions.get(region_name)
+        assert req_region, f"Missing region {region_name}"
 
-        region_data = region.read()
+        region_data = req_region.read()
 
         for req_field_name in region_req_fields:
             assert req_field_name in region_data, f"Missing field '{req_field_name}' in region '{region_name}'"
 
 if args.opt_check:
+    tag_uid: typing.Optional[bytes]
     if args.tag_uid:
         tag_uid = bytes.fromhex(args.tag_uid)
     else:

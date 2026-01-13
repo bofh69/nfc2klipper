@@ -13,8 +13,8 @@ from typing import Any, Dict, Optional, Tuple
 sys.path.insert(
     0, os.path.join(os.path.dirname(__file__), "..", "open_print_tag", "utils")
 )
-from record import Record
-from common import default_config_file
+from record import Record  # type: ignore[import-not-found]
+from common import default_config_file  # type: ignore[import-not-found]
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -148,6 +148,7 @@ class OpenPrintTagParser:
         """
 
         opt_record = Record(default_config_file, memoryview(data))
+        assert opt_record.regions is not None
         tag_data = opt_record.regions["main"].read()
         for k, v in tag_data.items():
             print(f"{k} = {v}")
@@ -194,23 +195,28 @@ class OpenPrintTagParser:
                 density = weight / (length * ((diameter / 20) ** 2) * 3.14159265359)
 
             # Build base filament data with required fields
+            primary_color: Any = tag_data["primary_color"]
+            color_hex = primary_color[1:] if isinstance(primary_color, str) else ""
             filament_data = {
                 "vendor_id": vendor_id,
                 "name": filament_name,
                 "material": material_type,
                 "density": tag_data.get("density", density),
                 "diameter": tag_data["filament_diameter"],
-                "color_hex": tag_data["primary_color"][1:],
+                "color_hex": color_hex,
             }
 
             # Build multi_color_hexes if color_2_hex is present
             multi_color_hexes = []
             for i in range(5):
-                if "secondary_color_" + str(i) in tag_data:
-                    multi_color_hexes.append(tag_data["secondary_color_" + str(i)][1:])
+                secondary_key = "secondary_color_" + str(i)
+                if secondary_key in tag_data:
+                    secondary_color: Any = tag_data[secondary_key]
+                    if isinstance(secondary_color, str):
+                        multi_color_hexes.append(secondary_color[1:])
 
             if len(multi_color_hexes) > 0:
-                filament_data["multi_color_hexes"] = multi_color_hexes.join(",")
+                filament_data["multi_color_hexes"] = ",".join(multi_color_hexes)
 
             # Apply field mapping from config
             filament_data = self._apply_field_mapping(

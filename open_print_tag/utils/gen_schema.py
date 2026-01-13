@@ -7,7 +7,7 @@ current_dir = Path(__file__).parent
 properties = {}
 
 for key in ["meta", "main", "aux"]:
-    fields = Fields.from_file(current_dir / ".." / "data" / f"{key}_fields.yaml")
+    fields = Fields.from_file(str(current_dir / ".." / "data" / f"{key}_fields.yaml"))
     props = {}
 
     field: Field

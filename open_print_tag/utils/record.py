@@ -54,16 +54,16 @@ class Region:
         cbor2.load(data_io)
         return data_io.tell()
 
-    def read(self, out_unknown_fields: dict[any, any] = None) -> dict[str, any]:
+    def read(self, out_unknown_fields: typing.Optional[dict[typing.Any, typing.Any]] = None) -> dict[str, typing.Any]:
         if self.is_corrupt:
             return {}
 
         return self.fields.decode(io.BytesIO(self.memory), out_unknown_fields=out_unknown_fields)
 
-    def write(self, data: dict[str, any]):
+    def write(self, data: dict[str, typing.Any]):
         return self.update(data, clear=True)
 
-    def update(self, update_fields: dict[str, any], update_unknown_fields: dict[str, str] = {}, remove_fields: list[str] = [], clear: bool = False):
+    def update(self, update_fields: dict[str, typing.Any], update_unknown_fields: dict[str, str] = {}, remove_fields: list[str] = [], clear: bool = False):
         if len(update_fields) == 0 and len(remove_fields) == 0 and not clear:
             # Nothing to do
             return
@@ -91,13 +91,13 @@ class Record:
     payload_offset: int  # Offset of the payload relative to the NDEF message start
     config: types.SimpleNamespace
     config_dir: str
-    uri: str = None
+    uri: typing.Optional[str] = None
 
-    meta_region: Region = None
-    main_region: Region = None
-    aux_region: Region = None
+    meta_region: typing.Optional[Region] = None
+    main_region: typing.Optional[Region] = None
+    aux_region: typing.Optional[Region] = None
 
-    regions: dict[str, Region] = None
+    regions: typing.Optional[dict[str, Region]] = None
 
     encode_config: EncodeConfig
 
