@@ -25,7 +25,8 @@ from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCServer
 from lib.moonraker_web_client import MoonrakerWebClient
 from lib.nfc_handler import NfcHandler
-from lib.nfc_parsers import NdefTextParser, TagIdentifierParser, OpenTag3DParser
+from lib.nfc_parsers import NdefTextParser, TagIdentifierParser
+from lib.opentag3d_parser import OpenTag3DParser
 from lib.spoolman_client import SpoolmanClient
 
 Nfc2KlipperConfig.configure_logging()
