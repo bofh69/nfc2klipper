@@ -124,7 +124,9 @@ class SpoolmanClient:
             logger.error("Exception while finding vendor '%s': %s", name, ex)
             return None
 
-    def create_vendor(self, name: str) -> Optional[int]:
+    def create_vendor(
+        self, name: str, empty_spool_weight: Optional[float]
+    ) -> Optional[int]:
         """Create a new vendor
 
         Args:
@@ -136,6 +138,8 @@ class SpoolmanClient:
         try:
             url: str = self.url + "/api/v1/vendor"
             data = {"name": name}
+            if empty_spool_weight:
+                data["empty_spool_weight"] = empty_spool_weight
             response = requests.post(url, json=data, timeout=10)
             if response.status_code not in (200, 201):
                 logger.error(
