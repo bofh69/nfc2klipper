@@ -71,7 +71,7 @@ class NdefTextParser:
         filament: Optional[str] = None
 
         for record in records:
-            if record.type == NDEF_TEXT_TYPE:
+            if hasattr(record, "type") and record.type == NDEF_TEXT_TYPE:
                 for line in record.text.splitlines():
                     line_parts = line.split(":")
                     if len(line_parts) == 2:
@@ -90,7 +90,8 @@ class NdefTextParser:
         """Parse NDEF text records for SPOOL and FILAMENT data"""
         if ndef_data is None:
             return None, None
-
+        if not hasattr(ndef_data, "records"):
+            return None, None
         try:
             return self._parse_records(ndef_data.records)
         except ndef.record.DecodeError as ex:
