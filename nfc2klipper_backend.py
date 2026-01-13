@@ -45,12 +45,7 @@ parser.add_argument(
     default=None,
     help=f"Configuration directory (default: {Nfc2KlipperConfig.CFG_DIR})",
 )
-parser.add_argument(
-    "--nfc-implementation",
-    metavar="IMPL",
-    default="nfcpy",
-    help="NFC implementation to use (default: nfcpy). Currently only 'nfcpy' is supported.",
-)
+
 parsed_args = parser.parse_args()
 
 args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config(parsed_args.config_dir)
@@ -113,7 +108,8 @@ else:
         clearing_gcode_template,
     )
     nfc_handler = create_nfc_handler(
-        args["nfc"]["nfc-device"], parsed_args.nfc_implementation
+        args["nfc"]["nfc-device"],
+        args["nfc"].get("nfc-reader", "nfcpy"),
     )
 
 last_nfc_id: Optional[str] = None  # pylint: disable=C0103
