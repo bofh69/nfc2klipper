@@ -3,6 +3,8 @@
 
 """Tag parsers for different data formats"""
 
+# pylint: disable=duplicate-code
+
 import logging
 import re
 from typing import Any, Dict, Optional, Tuple

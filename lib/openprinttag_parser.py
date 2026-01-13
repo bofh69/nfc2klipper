@@ -3,6 +3,8 @@
 
 """Tag parsers for different data formats"""
 
+# pylint: disable=duplicate-code
+
 import logging
 import os
 import re
@@ -13,8 +15,8 @@ from typing import Any, Dict, Optional, Tuple
 sys.path.insert(
     0, os.path.join(os.path.dirname(__file__), "..", "open_print_tag", "utils")
 )
-from record import Record  # type: ignore[import-not-found]
-from common import default_config_file  # type: ignore[import-not-found]
+from record import Record  # type: ignore # pylint: disable=import-error,wrong-import-position
+from common import default_config_file  # type: ignore # pylint: disable=import-error,wrong-import-position
 
 logger: logging.Logger = logging.getLogger(__name__)
 
