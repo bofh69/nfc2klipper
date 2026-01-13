@@ -139,7 +139,7 @@ class SpoolmanClient:
             url: str = self.url + "/api/v1/vendor"
             data: Dict[str, Any] = {"name": name}
             if empty_spool_weight:
-                data["empty_spool_weight"] = empty_spool_weight
+                data["empty_spool_weight"] = str(empty_spool_weight)
             response = requests.post(url, json=data, timeout=10)
             if response.status_code not in (200, 201):
                 logger.error(
