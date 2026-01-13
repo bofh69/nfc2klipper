@@ -17,9 +17,19 @@ path = [
   "nfc2klipper_api.service",
   "nfc2klipper_backend.service",
   "nfc2klipper.cfg",
+  "open_print_tag/README",
   "pn532.py.patch",
   "requirements.txt",
   ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "$YEAR $NAME <$CONTACT>"
 SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = [
+  "open_print_tag/data/**",
+  "open_print_tag/utils/**",
+  ]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 PRUSA RESEARCH A.S."
+SPDX-License-Identifier = "MIT"
