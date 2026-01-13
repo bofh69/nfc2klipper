@@ -24,4 +24,4 @@ jobs:
         pip install -r requirements.txt
     - name: Type checking with mypy
       run: |
-        mypy --config-file mypy.ini $(git ls-files '*.py' | grep -v write_tags.py)
+        mypy --config-file mypy.ini $(git ls-files '*.py' 'lib/*.py' | grep -v write_tags.py | grep -v 'open_print_tag/')

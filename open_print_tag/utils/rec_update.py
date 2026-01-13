@@ -15,7 +15,6 @@ parser.add_argument("--canonical", action=argparse.BooleanOptionalAction, defaul
 args = parser.parse_args()
 
 record = Record(args.config_file, memoryview(bytearray(sys.stdin.buffer.read())))
-assert record.regions is not None
 record.encode_config.canonical = args.canonical
 record.encode_config.indefinite_containers = args.indefinite_containers
 

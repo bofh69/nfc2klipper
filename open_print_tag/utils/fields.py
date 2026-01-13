@@ -233,7 +233,6 @@ class Fields:
             self.fields_by_key[field.key] = field
             self.fields_by_name[field.name] = field
 
-    @staticmethod
     def from_file(file: str):
         r = Fields()
         r.init_from_yaml(yaml.safe_load(open(file, "r", encoding="utf-8")), os.path.dirname(file))
@@ -242,7 +241,7 @@ class Fields:
 
     # Decodes the fields and values from the CBOR binary data
     # If out_unknown_fields is provided, unknown fields are written into it instead of asserting
-    def decode(self, binary_data: typing.IO[bytes], out_unknown_fields: typing.Optional[dict[str, str]] = None):
+    def decode(self, binary_data: typing.IO[bytes], out_unknown_fields: dict[str, str] = None):
         data = cbor2.load(binary_data)
         result = dict()
         for key, value in data.items():
@@ -256,21 +255,21 @@ class Fields:
             assert field, f"Unknown CBOR key '{key}'"
 
             try:
-                result[field.name] = field.decode(value)  # type: ignore[attr-defined]
+                result[field.name] = field.decode(value)
             except Exception as e:
-                e.add_note(f"Field {key} {field.name}")  # type: ignore[attr-defined]
+                e.add_note(f"Field {key} {field.name}")
                 raise
 
         return result
 
     # Encodes keys and field values to a cbor-ready dictionary
-    def encode(self, data: dict[str, typing.Any], config: EncodeConfig = EncodeConfig()) -> bytes:
+    def encode(self, data: dict[str, any], config: EncodeConfig = EncodeConfig()) -> bytes:
         return self.update(update_fields=data, config=config)
 
     def update(
         self,
-        original_data: typing.Optional[typing.IO[bytes]] = None,
-        update_fields: dict[str, typing.Any] = {},
+        original_data: typing.IO[bytes] = None,
+        update_fields: dict[str, any] = {},
         update_unknown_fields: dict[str, str] = {},
         remove_fields: list[str] = [],
         config: EncodeConfig = EncodeConfig(),
@@ -291,9 +290,9 @@ class Fields:
             assert field, f"Unknown field '{field_name}'"
 
             try:
-                result[field.key] = field.encode(value)  # type: ignore[attr-defined]
+                result[field.key] = field.encode(value)
             except Exception as e:
-                e.add_note(f"Field {field.key} {field.name}")  # type: ignore[attr-defined]
+                e.add_note(f"Field {field.key} {field.name}")
                 raise
 
         # Enforce use of CompactFloat, the "default" float encoding is not optimal when canonical == False
