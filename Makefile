@@ -30,15 +30,19 @@ $(VENV_TIMESTAMP): requirements.txt
 
 $(BLACK): $(VENV_TIMESTAMP)
 	$(PIP) install black
+	touch $@
 
 $(PYLINT): $(VENV_TIMESTAMP)
 	$(PIP) install pylint
+	touch $@
 
 $(REUSE): $(VENV_TIMESTAMP)
 	$(PIP) install reuse
+	touch $@
 
 $(MYPY): $(VENV_TIMESTAMP)
 	$(PIP) install mypy types-toml types-requests
+	touch $@
 
 fmt: $(BLACK)
 	$(BLACK) $(SRC)
