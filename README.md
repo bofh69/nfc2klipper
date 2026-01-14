@@ -33,7 +33,7 @@ Automatically sets the loaded spool &amp; filament in klipper by using NFC/RFID 
   - [Use with Happy-Hare](#use-with-happy-hare)
   - [Use with Prusa's OpenPrintTag tags](#use-with-prusas-openprinttag-tags)
   - [Use with OpenTag3D tags](#use-with-opentag3d-tags)
-  - [See also](#see-also)
+  - [Related projects](#related-projects)
   - [Developer info](#developer-info)
 
 
@@ -301,12 +301,13 @@ See Spoolman's API documentation [here](https://donkie.github.io/Spoolman/) to s
 You can also add extra fields in Spoolman for saving the data from the OpenTag3D tags.
 
 
-## See also
-If nfc2klipper doesn't work for some reason,
-[spool2klipper](https://github.com/bofh69/spool2klipper) can be use
-to automatically update the `active_filament` variable whenever the spool
-is changed in Moonraker (when changing it in the frontend for example).
-That way `ASSERT_ACTIVE_FILAMENT` will still work correctly.
+## Related projects
+
+* [FilaMan](https://www.filaman.app/) - a filament management system.
+* [esp_to_spoolman](https://github.com/dimbas80/esp_to_spoolman) - like nfc2klipper, but running on an ESP32.
+* [spool2klipper](https://github.com/bofh69/spool2klipper) - to set the filament id (and other data) when the spool id is changed.
+* [spoolman2slicer](https://github.com/bofh69/spoolman2slicer) - create filament config from Spoolman.
+* [OpenTag3d](https://opentag3d.info/) tag format.
 
 ## Developer info
 
