@@ -25,7 +25,7 @@ class Nfc2KlipperConfig:
     def configure_logging(cls) -> None:
         """Configure the logging"""
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format="%(asctime)s %(levelname)s - %(name)s: %(message)s",
         )
 

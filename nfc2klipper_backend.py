@@ -198,7 +198,7 @@ def set_spool_and_filament(spool: int, filament: int) -> None:
         set_spool_and_filament.old_spool == spool  # type: ignore[attr-defined]
         and set_spool_and_filament.old_filament == filament  # type: ignore[attr-defined]
     ):
-        logger.info("Read same spool & filament")
+        logger.debug("Read same spool & filament")
         return
 
     logger.info("Sending spool #%s, filament #%s to klipper", spool, filament)
