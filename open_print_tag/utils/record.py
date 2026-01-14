@@ -8,6 +8,8 @@ import typing
 
 from fields import Fields, EncodeConfig
 
+def cbor2_load(fp):
+    return cbor2.CBORDecoder(fp, read_size=1).decode()
 
 class Region:
     memory: memoryview
@@ -26,7 +28,7 @@ class Region:
         self.fields = fields
 
         try:
-            cbor2.load(io.BytesIO(self.memory))
+            cbor2_load(io.BytesIO(self.memory))
         except cbor2.CBORError:
             self.is_corrupt = True
 
@@ -51,7 +53,7 @@ class Region:
             return 0
 
         data_io = io.BytesIO(self.memory)
-        cbor2.load(data_io)
+        cbor2_load(data_io)
         return data_io.tell()
 
     def read(self, out_unknown_fields: dict[any, any] = None) -> dict[str, any]:
@@ -206,7 +208,7 @@ class Record:
             return
 
         meta_io = io.BytesIO(self.payload)
-        cbor2.load(meta_io)
+        cbor2_load(meta_io)
         meta_section_size = meta_io.tell()
         metadata = Region(self, 0, self.payload[0:meta_section_size], Fields.from_file(os.path.join(self.config_dir, self.config.meta_fields))).read()
 
