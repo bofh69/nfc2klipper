@@ -1,6 +1,7 @@
 cbor2==5.8.0
 flask==3.0.3
 Gunicorn==23.0.0
+ndeflib==0.3.3
 nfcpy==1.0.4
 npyscreen==4.10.5
 pn5180-tagomatic==0.0.3

@@ -177,7 +177,7 @@ class PN5180Handler(NfcInterface):
                 )
             if len(uids) >= 1:
                 card = session.connect_iso14443a(uids[0])
-                self._read_from_card(card)
+                self._read_from_card(card, True)
                 return True
         return False
 
@@ -190,7 +190,7 @@ class PN5180Handler(NfcInterface):
                 )
             if len(uids) >= 1:
                 card = session.connect_iso15693(uids[0])
-                self._read_from_card(card)
+                self._read_from_card(card, False)
                 return True
         return False
 
@@ -228,28 +228,91 @@ class PN5180Handler(NfcInterface):
         """Call to stop the handler"""
         self._should_stop_event.set()
 
-    def _read_from_card(self, card) -> None:
+    class _Tag:  # pylint: disable=too-few-public-methods
+        def __init__(self, card):
+            self._card = card
+            self._records = None
+
+        def _read_field(self, mem: bytes, offset: int) -> tuple[int, int | None]:
+            if offset >= len(mem):
+                return (-1, None)
+            val = mem[offset]
+            offset += 1
+            if val < 255:
+                return (val, offset)
+            if offset + 2 > len(mem):
+                return (-1, None)
+            val = (mem[offset] << 8) | mem[offset + 1]
+            offset += 2
+            return (val, offset)
+
+        def _find_ndef_offset(self, mem: bytes) -> int | None:
+            if len(mem) < 32:
+                return None
+            if mem[12] != 0xE1:
+                return None
+            offset: int | None = 16
+            while offset is not None and offset < len(mem):
+                (typ, new_offset) = self._read_field(mem, offset)
+                if new_offset is None:
+                    return None
+                offset = new_offset
+                if typ == 0x00:
+                    continue
+                (length, new_offset) = self._read_field(mem, offset)
+                if new_offset is None:
+                    return None
+                offset = new_offset
+                if typ == 0x03:
+                    break
+                offset += length
+            if offset is None or offset >= len(mem):
+                return None
+
+            return offset
+
+        @property
+        def records(self) -> list[ndef.Record]:
+            """Return parsed NDEF Records"""
+            if self._records is None:
+                mem = b""
+                try:
+                    offset = 0
+                    while True:
+                        # print(f"Reading from offset {offset}")
+                        chunk = self._card.read_memory(offset // 4, 64)
+                        offset += len(chunk)
+                        mem += chunk
+                except TimeoutError:
+                    pass
+
+                ndef_offset = self._find_ndef_offset(mem)
+                if ndef_offset is not None:
+                    self._records = list(ndef.message_decoder(mem[ndef_offset:]))
+                else:
+                    self._records = []
+            return self._records
+
+    def _read_from_card(self, card, parse_ndef: bool) -> None:
         """Read data from tag and call callback"""
         if self._on_nfc_tag_present:
             identifier: str = card.uid.hex(":")
 
-            # pylint: disable=fixme
-            # TODO: Read memory and parse NDEF
-            mem = b""
-            try:
-                offset = 0
-                while True:
-                    chunk = card.read_memory(offset // 4, 64)
-                    # print(f"Read {len(chunk)}")
-                    offset += len(chunk)
-                    mem += chunk
-            except TimeoutError:
-                pass
-
-            # print(f"Decoding:\nLEN: {len(mem)}\n{mem.hex(' ')}")
-            # print(mem)
-
-            self._on_nfc_tag_present(mem, identifier)
+            if parse_ndef:
+                tag = self._Tag(card)
+                self._on_nfc_tag_present(tag, identifier)
+            else:
+                mem = b""
+                try:
+                    offset = 0
+                    while True:
+                        # print(f"Reading from offset {offset}")
+                        chunk = card.read_memory(offset // 4, 64)
+                        offset += len(chunk)
+                        mem += chunk
+                except TimeoutError:
+                    pass
+                self._on_nfc_tag_present(mem, identifier)
 
 
 def create_nfc_handler(nfc_device: str, implementation: str = "nfcpy") -> NfcInterface:
