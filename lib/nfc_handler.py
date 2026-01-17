@@ -11,6 +11,7 @@ from typing import Callable, Optional, Any
 import ndef
 import nfc
 from pn5180_tagomatic import (
+    Card,
     ISO15693Error,
     PN5180,
     PN5180Error,
@@ -280,7 +281,9 @@ class PN5180Handler(NfcInterface):
                     offset = 0
                     while True:
                         # print(f"Reading from offset {offset}")
-                        chunk = self._card.read_memory(offset // 4, 64)
+                        chunk = self._card.read_memory(offset, 64)
+                        if len(chunk) == 0:
+                            break
                         offset += len(chunk)
                         mem += chunk
                 except TimeoutError:
@@ -293,10 +296,10 @@ class PN5180Handler(NfcInterface):
                     self._records = []
             return self._records
 
-    def _read_from_card(self, card, parse_ndef: bool) -> None:
+    def _read_from_card(self, card: Card, parse_ndef: bool) -> None:
         """Read data from tag and call callback"""
         if self._on_nfc_tag_present:
-            identifier: str = card.uid.hex(":")
+            identifier: str = card.id.uid_as_string()
 
             if parse_ndef:
                 tag = self._Tag(card)
@@ -307,7 +310,7 @@ class PN5180Handler(NfcInterface):
                     offset = 0
                     while True:
                         # print(f"Reading from offset {offset}")
-                        chunk = card.read_memory(offset // 4, 64)
+                        chunk = card.read_memory(offset, 64)
                         offset += len(chunk)
                         mem += chunk
                 except TimeoutError:

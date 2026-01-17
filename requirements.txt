@@ -4,7 +4,7 @@ Gunicorn==23.0.0
 ndeflib==0.3.3
 nfcpy==1.0.4
 npyscreen==4.10.5
-pn5180-tagomatic==0.0.3
+pn5180-tagomatic==0.1.1rc2
 requests==2.32.5
 toml==0.10.2
 types-toml==0.10.8.20240310
