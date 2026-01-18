@@ -3,6 +3,8 @@
 
 """Tag parsers for different data formats"""
 
+# pylint: disable=duplicate-code
+
 import logging
 import re
 from typing import Any, Dict, Optional, Tuple
@@ -418,8 +420,12 @@ class OpenTag3DParser:
         vendor_id = self.spoolman_client.find_vendor_by_name(tag_data["manufacturer"])
 
         if vendor_id is None:
-            logger.info("Creating new vendor: %s", tag_data["manufacturer"])
-            vendor_id = self.spoolman_client.create_vendor(tag_data["manufacturer"])
+            manufacturer_name = tag_data["manufacturer"]
+            logger.info("Creating new vendor: %s", manufacturer_name)
+            spool_weight = tag_data.get("empty_spool_weight", None)
+            vendor_id = self.spoolman_client.create_vendor(
+                manufacturer_name, spool_weight
+            )
             if vendor_id is None:
                 logger.error("Failed to create vendor")
                 return None, None
@@ -443,7 +449,6 @@ class OpenTag3DParser:
                 "material": material,
                 "density": tag_data["density"],
                 "diameter": tag_data["diameter_mm"],
-                "color_hex": tag_data["color_hex"],
             }
 
             # Build multi_color_hexes if color_2_hex is present
@@ -453,7 +458,10 @@ class OpenTag3DParser:
                     multi_color_hexes.append(tag_data["color_3_hex"])
                     if "color_4_hex" in tag_data:
                         multi_color_hexes.append(tag_data["color_4_hex"])
-                filament_data["multi_color_hexes"] = multi_color_hexes
+                filament_data["multi_color_hexes"] = ",".join(multi_color_hexes)
+                filament_data["multi_color_direction"] = "coaxial"
+            else:
+                filament_data["color_hex"] = tag_data["color_hex"]
 
             # Apply field mapping from config
             filament_data = self._apply_field_mapping(

@@ -24,9 +24,11 @@ from typing import Any, Dict, List, Optional, Union
 from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCServer
 from lib.moonraker_web_client import MoonrakerWebClient
-from lib.nfc_handler import NfcHandler
+from lib.nfc_handler import create_nfc_handler
+from lib.nfc_interface import NfcInterface
 from lib.nfc_parsers import NdefTextParser, TagIdentifierParser
 from lib.opentag3d_parser import OpenTag3DParser
+from lib.openprinttag_parser import OpenPrintTagParser
 from lib.spoolman_client import SpoolmanClient
 
 Nfc2KlipperConfig.configure_logging()
@@ -44,6 +46,7 @@ parser.add_argument(
     default=None,
     help=f"Configuration directory (default: {Nfc2KlipperConfig.CFG_DIR})",
 )
+
 parsed_args = parser.parse_args()
 
 args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config(parsed_args.config_dir)
@@ -97,9 +100,7 @@ if USE_MOCK_OBJECTS:
             clearing_gcode_template,
         )
     )
-    nfc_handler: Union[NfcHandler, "MockNfcHandler"] = MockNfcHandler(
-        args["nfc"]["nfc-device"]
-    )
+    nfc_handler: NfcInterface = MockNfcHandler(args["nfc"]["nfc-device"])
 else:
     spoolman = SpoolmanClient(args["spoolman"]["spoolman-url"])
     moonraker = MoonrakerWebClient(
@@ -107,7 +108,10 @@ else:
         setting_gcode_template,
         clearing_gcode_template,
     )
-    nfc_handler = NfcHandler(args["nfc"]["nfc-device"])
+    nfc_handler = create_nfc_handler(
+        args["nfc"]["nfc-device"],
+        args["nfc"].get("nfc-reader", "nfcpy"),
+    )
 
 last_nfc_id: Optional[str] = None  # pylint: disable=C0103
 last_spool_id: Optional[str] = None  # pylint: disable=C0103
@@ -131,14 +135,37 @@ opentag3d_spool_mapping: Dict[str, str] = (
 logger.info("OpenTag3D filament field mapping: %s", opentag3d_filament_mapping)
 logger.info("OpenTag3D spool field mapping: %s", opentag3d_spool_mapping)
 
+openprinttag_filament_template: str = (
+    Nfc2KlipperConfig.get_openprinttag_filament_name_template(args)
+)
+logger.info(
+    "Using OpenPrintTag filament name template: %s", openprinttag_filament_template
+)
+
+# Get OpenPrintTag field mappings
+openprinttag_filament_mapping: Dict[str, str] = (
+    Nfc2KlipperConfig.get_openprinttag_filament_field_mapping(args)
+)
+openprinttag_spool_mapping: Dict[str, str] = (
+    Nfc2KlipperConfig.get_openprinttag_spool_field_mapping(args)
+)
+logger.info("OpenPrintTag filament field mapping: %s", openprinttag_filament_mapping)
+logger.info("OpenPrintTag spool field mapping: %s", openprinttag_spool_mapping)
+
 # Create parsers for different tag formats
 # List of parsers to try in order:
 # 1. NDEF text parser for simple SPOOL:X FILAMENT:Y format
 # 2. Tag ID lookup in Spoolman's nfc_id extra field
 # 3. OpenTag3D parser - only called if tag not found via nfc_id
 parsers: List[Any] = [
-    NdefTextParser(),
     TagIdentifierParser(spoolman),
+    NdefTextParser(),
+    OpenPrintTagParser(
+        spoolman,
+        openprinttag_filament_template,
+        openprinttag_filament_mapping,
+        openprinttag_spool_mapping,
+    ),
     OpenTag3DParser(
         spoolman,
         opentag3d_filament_template,
@@ -171,7 +198,7 @@ def set_spool_and_filament(spool: int, filament: int) -> None:
         set_spool_and_filament.old_spool == spool  # type: ignore[attr-defined]
         and set_spool_and_filament.old_filament == filament  # type: ignore[attr-defined]
     ):
-        logger.info("Read same spool & filament")
+        logger.debug("Read same spool & filament")
         return
 
     logger.info("Sending spool #%s, filament #%s to klipper", spool, filament)
