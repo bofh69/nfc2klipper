@@ -99,7 +99,7 @@ if __name__ == "__main__":
         try:
             api_cmd = [sys.executable, api_script]
             if parsed_args.config_dir:
-                api_cmd.extend(["-c", parsed_args.config_dir])
+                os.environ["NFC2KLIPPER_CONFIG_DIR"] = parsed_args.config_dir
             # pylint: disable=consider-using-with
             api_process = subprocess.Popen(api_cmd)  # nosec
 
