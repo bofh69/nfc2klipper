@@ -14,7 +14,6 @@ import nfc
 import npyscreen
 import requests
 
-
 SPOOL = "SPOOL"
 FILAMENT = "FILAMENT"
 NDEF_TEXT_TYPE = "urn:nfc:wkt:T"

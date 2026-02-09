@@ -14,7 +14,6 @@
 
 # pylint: disable=duplicate-code
 
-import argparse
 import os
 import sys
 from typing import Any, Dict, Optional, Tuple, Union
@@ -23,23 +22,10 @@ from flask import Flask, render_template
 from lib.config import Nfc2KlipperConfig
 from lib.ipc import IPCClient
 
-
 Nfc2KlipperConfig.configure_logging()
 
-# Parse command line arguments
-# pylint: disable=duplicate-code
-parser = argparse.ArgumentParser(description="Web API service for nfc2klipper.")
-parser.add_argument(
-    "-c",
-    "--config-dir",
-    metavar="DIR",
-    default=None,
-    help=f"Configuration directory (default: {Nfc2KlipperConfig.CFG_DIR})",
-)
-parsed_args = parser.parse_args()
-
-args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config(parsed_args.config_dir)
-# pylint: enable=duplicate-code
+cfg_path = os.environ.get("NFC2KLIPPER_CFG_DIR", Nfc2KlipperConfig.CFG_DIR)
+args: Optional[Dict[str, Any]] = Nfc2KlipperConfig.get_config(cfg_path)
 
 if not args:
     print(
