@@ -305,6 +305,7 @@ You can also add extra fields in Spoolman for saving the data from the OpenTag3D
 
 * [FilaMan](https://www.filaman.app/) - a filament management system.
 * [esp_to_spoolman](https://github.com/dimbas80/esp_to_spoolman) - like nfc2klipper, but running on an ESP32.
+* [OpenPrintTag Scanner](https://github.com/ryanch/openprinttag_scanner) - like esp_to_spoolman, but also has a display.
 * [spool2klipper](https://github.com/bofh69/spool2klipper) - to set the filament id (and other data) when the spool id is changed.
 * [spoolman2slicer](https://github.com/bofh69/spoolman2slicer) - create filament config from Spoolman.
 * [OpenTag3d](https://opentag3d.info/) tag format.
