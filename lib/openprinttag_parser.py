@@ -209,7 +209,7 @@ class OpenPrintTagParser:
                 "name": filament_name,
                 "material": material_type,
                 "density": tag_data.get("density", density),
-                "diameter": tag_data["filament_diameter"],
+                "diameter": tag_data.get("filament_diameter", 1.75),
                 "color_hex": tag_data["primary_color"][1:],
             }
 
@@ -239,7 +239,7 @@ class OpenPrintTagParser:
 
             if "article_number" not in filament_data:
                 if "gtin" in tag_data:
-                    filament_data["article_number"] = tag_data["gtin"]
+                    filament_data["article_number"] = str(tag_data["gtin"])
 
             if "settings_extruder_temp" not in filament_data:
                 filament_data["settings_extruder_temp"] = self._get_avg_temp(
